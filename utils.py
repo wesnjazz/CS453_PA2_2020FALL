@@ -51,8 +51,10 @@ def make_pkt_snd(seq, data):
 	pkt = " ".join([str(seq), ACK, payload, chk])
 	return pkt
 
-def make_pkt_rcv(ACK, seq, checksum):
-    pkt = " ".join([str(ACK), seq, checksum])
+def make_pkt_rcv(ACK, seq, chk_rcv):
+    pkt = "  a                      chksm"
+    pkt = pkt.replace("a", str(ACK))
+    pkt = pkt.replace("chksm", chk_rcv)
     return pkt
 
 def udt_send(socket, send_pkt):
@@ -72,7 +74,7 @@ def rdt_rcv(socket):
 	return len(rcvpkt), rcvpkt
 
 def extract(rcvpkt):
-    return rcvpkt[4:26]
+    return rcvpkt[4:24]
 
 def check_thread_alive(thr):
     # print(thr)

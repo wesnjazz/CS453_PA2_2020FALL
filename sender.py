@@ -56,9 +56,9 @@ transmission_timeout = int(transmission_timeout_str)
 sender_or_receiver = "S"
 
 # Message: in the form of "HELLO S <loss_rate> <corrupt_rate> <max_delay> <ID>" with a white space between them
-Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
-print("Message: {}".format(Message))
-print(Message.split())
+# Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
+# print("Message: {}".format(Message))
+# print(Message.split())
 # Message = "HELLO S 0.0 0.0 0 1234"
 
 # Create an TCP socket
@@ -98,53 +98,70 @@ state = FSM["State 1"]
 Timer = False
 while True:
 	if state == FSM["State 1"]:
+		print("State 1")
 		# print("\nreceiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		send_pkt = make_pkt_snd(0, file)
+		print("size of file:[{}] first-five:[{}]".format(len(file), file[:5]), end="")
+		file = file[20:]
+		print("\tsize of file:[{}] first-five:[{}]".format(len(file), file[:5]))
+		print("\nState 1 - sending... [{}]".format(send_pkt))
 		udt_send(s, send_pkt)
 		state = FSM["State 2"]
 		print("Timer start @ State 1")
 		Timer = True
 		sleep(2)
 	elif state == FSM["State 2"]:
+		print("State 2")
 		if Timer == False:
-			print("\nsending... {}".format(send_pkt))
-			udt_send(send_pkt)
+			print("\nState 2 - sending... [{}]".format(send_pkt))
+			udt_send(s, send_pkt)
 			Timer = True
 			print("Timer start @ State 2")
 			sleep(2)
 		print("\nreceiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		print("State 2 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 0):
+			print("\t\tState 2 - not isCorrupt() && isACK(0)")
 			print("Timer Stop @ State 2")
 			Timer = False
 			state = FSM["State 3"]
 			sleep(2)
 		else:
+			print("\t\tState 2 - isCorrupt() || isACK(1)")
+			sleep(2)
 			continue
 	elif state == FSM["State 3"]:
+		print("State 3")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		send_pkt = make_pkt_snd(1, file)
+		print("\nState 3 - sending... [{}]".format(send_pkt))
 		udt_send(s, send_pkt)
 		state = FSM["State 4"]
 		print("Timer start @ State 3")
 		Timer = True
 		sleep(2)
 	elif state == FSM["State 4"]:
+		print("State 4")
 		if Timer == False:
-			print("\nsending... {}".format(send_pkt))
-			udt_send(send_pkt)
+			print("\nState 4 - sending... [{}]".format(send_pkt))
+			udt_send(s, send_pkt)
 			Timer = True
 			print("Timer start @ State 4")
 			sleep(2)
 		print("\nreceiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		print("State 4 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
 		if isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
+			print("\t\tState 4 - not isCorrupt() && isACK(1)")
 			print("Timer Stop @ State 2")
 			Timer = False
 			state = FSM["State 1"]
 			sleep(2)
 		else:
+			print("\t\tState 4 - isCorrupt() || isACK(0)")
+			sleep(2)
 			continue
 
 
@@ -152,7 +169,7 @@ while True:
 # 	sleep(1)
 # 	print("\nreceiving...")
 # 	rcvpkt_len, rcvpkt = rdt_rcv(s)
-# 	print("len:{}  data:{}".format(rcvpkt_len, rcvpkt))
+# 	print("len:[{}]  data:{}".format(rcvpkt_len, rcvpkt))
 # 	send_pkt = make_pkt_snd(0, data)
 # 	# print(send_pkt)
 # 	sleep(1)

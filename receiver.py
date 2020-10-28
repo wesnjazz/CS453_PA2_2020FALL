@@ -45,9 +45,9 @@ max_delay = int(max_delay_str)
 sender_or_receiver = "R"
 
 # Message: in the form of "HELLO S <loss_rate> <corrupt_rate> <max_delay> <ID>" with a white space between them
-Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
-print("Message: {}".format(Message))
-print(Message.split())
+# Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
+# print("Message: {}".format(Message))
+# print(Message.split())
 # Message = "HELLO S 0.0 0.0 0 1234"
 
 # # Message: in the form of "HELLO S <loss_rate> <corrupt_rate> <max_delay> <ID>" with a white space between them
@@ -64,7 +64,7 @@ print(Message.split())
 ## gaia server (connect as a client) ##
 # Create an TCP socket
 s = socket(AF_INET, SOCK_STREAM)
-s.connect((server_IP, server_Port))
+# s.connect((server_IP, server_Port))
 s.bind((server_IP, server_Port))
 s.listen(5)
 
@@ -85,39 +85,58 @@ FSM = {"State 1": 1, # Wait for call 0 from below
 
 
 Timer = False
-data = ""
+file = ""
+conn, address = s.accept()
+state = FSM["State 1"]
 while True:
 	if state == FSM["State 1"]:
+		print("State 1")
 		print("\nreceiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		rcvpkt_len, rcvpkt = rdt_rcv(conn)
+		print("State 1 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 0):
-			data += extract(rcvpkt)
-			chk_rcv = checksum(rcvpkt[:-5])
+			print("\t\tState 1 - not isCorrupt() && has_seq(0)")
+			print("\t\t\tfile:[{}]".format(file), end=" ")
+			file += extract(rcvpkt)
+			print("\t\t\tfile:[{}]".format(file))
+			data = rcvpkt[4:-6]
+			print("\t\t\tdata:[{}]".format(data))
+			chk_rcv = checksum(data)
+			print("\t\t\tchk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
-			print("\nsending... {}".format(send_pkt))
-			udt_send(send_pkt)
+			print("\nsending... [{}]".format(send_pkt))
+			udt_send(conn, send_pkt)
 			sleep(2)
 			state = FSM["State 2"]
 		else:
+			print("\t\tState 1 - isCorrupt() || has_seq(1)")
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
-			print("\nsending... {}".format(send_pkt))
-			udt_send(send_pkt)
+			print("\nsending... [{}]".format(send_pkt))
+			udt_send(conn, send_pkt)
 			sleep(2)
 	if state == FSM["State 2"]:
+		print("State 2")
 		print("\nreceiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		rcvpkt_len, rcvpkt = rdt_rcv(conn)
+		print("State 2 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 1):
-			data += extract(rcvpkt)
-			chk_rcv = checksum(rcvpkt[:-5])
+			print("\t\tState 2 - not isCorrupt() && has_seq(1)")
+			file += extract(rcvpkt)
+			print("\t\t\tfile:[{}]".format(file))
+			data = rcvpkt[4:-6]
+			print("\t\t\tdata:[{}]".format(data))
+			chk_rcv = checksum(data)
+			print("\t\t\tchk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
-			print("\nsending... {}".format(send_pkt))
-			udt_send(send_pkt)
+			print("\nsending... [{}]".format(send_pkt))
+			udt_send(conn, send_pkt)
 			sleep(2)
 			state = FSM["State 1"]
 		else:
+			print("\t\tState 2 - isCorrupt() || has_seq(0)")
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
-			print("\nsending... {}".format(send_pkt))
-			udt_send(send_pkt)
+			print("\nsending... [{}]".format(send_pkt))
+			udt_send(conn, send_pkt)
 			sleep(2)
 
 
@@ -145,7 +164,7 @@ while True:
 # 		print(data_len, data, data_split)
 # 		if data_len != 0:
 # 			print("received")
-# 			udt_send(s, "HIHIHI")
+# 			udt_send(conn, s, "HIHIHI")
 
 # 		continue
 # 		# if not data:
@@ -171,7 +190,7 @@ while True:
 
 # 	except timeout:
 # 		# After Maximum time, the server is closing the opened socket and exit.
-# 		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+# 		print("TCP Server Closing... Max time out reached: [{}] seconds".format(maxWaitTime))
 # 		s.close()
 # 		break
 
