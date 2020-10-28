@@ -2,74 +2,8 @@ from socket import *
 import sys
 from time import sleep
 import threading
+from utils import *
 
-
-def checksum(msg):
-    """
-     This function calculates checksum of an input string
-     Note that this checksum is not Internet checksum.
-    
-     Input: msg - String
-     Output: String with length of five
-     Example Input: "1 0 That was the time fo "
-     Expected Output: "02018"
-    """
-
-    # step1: covert msg (string) to bytes
-    msg = msg.encode("utf-8")
-    s = 0
-    # step2: sum all bytes
-    for i in range(0, len(msg), 1):
-        s += msg[i]
-    # step3: return the checksum string with fixed length of five 
-    #        (zero-padding in front if needed)
-    return format(s, '05d')
-
-def checksum_verifier(msg):
-    """
-     This function compares packet checksum with expected checksum
-    
-     Input: msg - String
-     Output: Boolean - True if they are the same, Otherwise False.
-     Example Input: "1 0 That was the time fo 02018"
-     Expected Output: True
-    """
-
-    expected_packet_length = 30
-    # step 1: make sure the checksum range is 30
-    if len(msg) < expected_packet_length:
-        return False
-    # step 2: calculate the packet checksum
-    content = msg[:-5]
-    calc_checksum = checksum(content)
-    expected_checksum = msg[-5:]
-    # step 3: compare with expected checksum
-    if calc_checksum == expected_checksum:
-        return True
-    return False
-
-def make_pkt(seq, data):
-	ACK = str(0)
-	payload = data[:20]
-	chk = checksum(payload)
-	pkt = " ".join([str(seq), ACK, payload, chk])
-	return pkt
-
-
-def udt_send(socket, send_pkt):
-	socket.send(bytes(send_pkt, encoding='utf-8'))
-
-
-def isACK(rcvpkt, ACK):
-	return int(rcvpkt[2]) == ACK
-
-
-def isCorrupt(rcvpkt):
-	return len(rcvpkt) != 30
-
-def rdt_rcv(socket):
-	rcvpkt = s.recv(1024).decode("utf-8")
-	return len(rcvpkt), rcvpkt
 
 # Check the number of command line arguments
 if len(sys.argv) < 4:
@@ -77,10 +11,10 @@ if len(sys.argv) < 4:
 	exit()
 # Server IP address (str)
 # Server Port number (int)
-# server_IP = "127.0.0.1"
-# server_Port = 80
-server_IP = "gaia.cs.umass.edu"
-server_Port = 20000
+server_IP = "127.0.0.1"
+server_Port = 80
+# server_IP = "gaia.cs.umass.edu"
+# server_Port = 20000
 
 # Connection ID of the client
 ID_str = sys.argv[1]
@@ -131,66 +65,122 @@ print(Message.split())
 # Create an TCP socket
 s = socket(AF_INET, SOCK_STREAM)
 s.connect((server_IP, server_Port))
-# s.bind((server_IP, server_Port))
-# s.listen(5)
+s.bind((server_IP, server_Port))
+s.listen(5)
 
 
 # Set the maximum wait time for the client
 maxWaitTime = 15
 s.settimeout(maxWaitTime)
-s.send(bytes(Message, encoding='utf-8'))
+# s.send(bytes(Message, encoding='utf-8'))
 
 
 message_OK = False
 
-###  OK message  ###
-while not message_OK:
-	try:
-		sleep(0.5)
-		conn, address = s.accept()
-		# Send the message
-		# data = s.recv(1024).decode("utf-8")
-		data_len, data = rdt_rcv(conn)
-		data_split = data.split()
-		print(data_len, data, data_split)
-		if data_len != 0:
-			print("received")
-			udt_send(s, "HIHIHI")
 
-		continue
-		# if not data:
-			# print("no data")
-			# break
-		if len(data) != 0:
-			if data_split[0] == "OK":
-				message_OK = True
-			if data_split[0] == "ERROR":
-				print(data)
-				# break
-			if data_split[0] == "WAITING":
-				print(data)
-				# sleep(5)
+FSM = {"State 1": 1, # Wait for call 0 from below
+	   "State 2": 2, # Wait for call 1 from below
+	  }
+
+
+
+Timer = False
+data = ""
+while True:
+	if state == FSM["State 1"]:
+		print("\nreceiving...")
+		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 0):
+			data += extract(rcvpkt)
+			chk_rcv = checksum(rcvpkt[:-5])
+			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
+			print("\nsending... {}".format(send_pkt))
+			udt_send(send_pkt)
+			sleep(2)
+			state = FSM["State 2"]
 		else:
-			print("No data")
-			# sleep(1)
-		# sleep(2)
-	except KeyboardInterrupt:
-		print("KeyboardInterrupt")
-		s.close()
-		break
+			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
+			print("\nsending... {}".format(send_pkt))
+			udt_send(send_pkt)
+			sleep(2)
+	if state == FSM["State 2"]:
+		print("\nreceiving...")
+		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 1):
+			data += extract(rcvpkt)
+			chk_rcv = checksum(rcvpkt[:-5])
+			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
+			print("\nsending... {}".format(send_pkt))
+			udt_send(send_pkt)
+			sleep(2)
+			state = FSM["State 1"]
+		else:
+			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
+			print("\nsending... {}".format(send_pkt))
+			udt_send(send_pkt)
+			sleep(2)
 
-	except timeout:
-		# After Maximum time, the server is closing the opened socket and exit.
-		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
-		s.close()
-		break
 
-	except ConnectionResetError:
-		print("connection was CLOSED.")
-		s.close()
-		break
 
-print("OK Message")
+
+
+
+
+
+
+
+
+
+
+
+# ###  OK message  ###
+# while not message_OK:
+# 	try:
+# 		sleep(0.5)
+# 		conn, address = s.accept()
+# 		# Send the message
+# 		# data = s.recv(1024).decode("utf-8")
+# 		data_len, data = rdt_rcv(conn)
+# 		data_split = data.split()
+# 		print(data_len, data, data_split)
+# 		if data_len != 0:
+# 			print("received")
+# 			udt_send(s, "HIHIHI")
+
+# 		continue
+# 		# if not data:
+# 			# print("no data")
+# 			# break
+# 		if len(data) != 0:
+# 			if data_split[0] == "OK":
+# 				message_OK = True
+# 			if data_split[0] == "ERROR":
+# 				print(data)
+# 				# break
+# 			if data_split[0] == "WAITING":
+# 				print(data)
+# 				# sleep(5)
+# 		else:
+# 			print("No data")
+# 			# sleep(1)
+# 		# sleep(2)
+# 	except KeyboardInterrupt:
+# 		print("KeyboardInterrupt")
+# 		s.close()
+# 		break
+
+# 	except timeout:
+# 		# After Maximum time, the server is closing the opened socket and exit.
+# 		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+# 		s.close()
+# 		break
+
+# 	except ConnectionResetError:
+# 		print("connection was CLOSED.")
+# 		s.close()
+# 		break
+
+# print("OK Message")
 
 
 # while True:

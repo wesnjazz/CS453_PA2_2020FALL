@@ -1,3 +1,5 @@
+import threading
+
 def checksum(msg):
     """
      This function calculates checksum of an input string
@@ -42,21 +44,25 @@ def checksum_verifier(msg):
         return True
     return False
 
-def make_pkt(seq, data):
+def make_pkt_snd(seq, data):
 	ACK = str(0)
 	payload = data[:20]
 	chk = checksum(payload)
 	pkt = " ".join([str(seq), ACK, payload, chk])
 	return pkt
 
+def make_pkt_rcv(ACK, seq, checksum):
+    pkt = " ".join([str(ACK), seq, checksum])
+    return pkt
 
 def udt_send(socket, send_pkt):
 	socket.send(bytes(send_pkt, encoding='utf-8'))
 
+def has_seq(rcvpkt, seq):
+    return int(rcvpkt[0]) == seq
 
 def isACK(rcvpkt, ACK):
 	return int(rcvpkt[2]) == ACK
-
 
 def isCorrupt(rcvpkt):
 	return len(rcvpkt) != 30
@@ -64,3 +70,19 @@ def isCorrupt(rcvpkt):
 def rdt_rcv(socket):
 	rcvpkt = socket.recv(1024).decode("utf-8")
 	return len(rcvpkt), rcvpkt
+
+def extract(rcvpkt):
+    return rcvpkt[4:26]
+
+def check_thread_alive(thr):
+    # print(thr)
+    # return True
+    # try:
+        # l = thr.is_alive()
+    # except TypeError:
+        # return False
+    # return l
+    print(thr)
+    thr.join(timeout=0.0)
+    # print(thr.is_alive())
+    return thr.is_alive()

@@ -2,97 +2,18 @@ from socket import *
 import sys
 from time import sleep
 import threading
+from utils import *
 
-
-def checksum(msg):
-    """
-     This function calculates checksum of an input string
-     Note that this checksum is not Internet checksum.
-    
-     Input: msg - String
-     Output: String with length of five
-     Example Input: "1 0 That was the time fo "
-     Expected Output: "02018"
-    """
-
-    # step1: covert msg (string) to bytes
-    msg = msg.encode("utf-8")
-    s = 0
-    # step2: sum all bytes
-    for i in range(0, len(msg), 1):
-        s += msg[i]
-    # step3: return the checksum string with fixed length of five 
-    #        (zero-padding in front if needed)
-    return format(s, '05d')
-
-def checksum_verifier(msg):
-    """
-     This function compares packet checksum with expected checksum
-    
-     Input: msg - String
-     Output: Boolean - True if they are the same, Otherwise False.
-     Example Input: "1 0 That was the time fo 02018"
-     Expected Output: True
-    """
-
-    expected_packet_length = 30
-    # step 1: make sure the checksum range is 30
-    if len(msg) < expected_packet_length:
-        return False
-    # step 2: calculate the packet checksum
-    content = msg[:-5]
-    calc_checksum = checksum(content)
-    expected_checksum = msg[-5:]
-    # step 3: compare with expected checksum
-    if calc_checksum == expected_checksum:
-        return True
-    return False
-
-def make_pkt(seq, data):
-	ACK = str(0)
-	payload = data[:20]
-	chk = checksum(payload)
-	pkt = " ".join([str(seq), ACK, payload, chk])
-	return pkt
-
-
-def udt_send(socket, send_pkt):
-	socket.send(bytes(send_pkt, encoding='utf-8'))
-
-
-def isACK(rcvpkt, ACK):
-	return int(rcvpkt[2]) == ACK
-
-
-def isCorrupt(rcvpkt):
-	return len(rcvpkt) != 30
-
-def rdt_rcv(socket):
-	rcvpkt = s.recv(1024).decode("utf-8")
-	return len(rcvpkt), rcvpkt
-
-def check_thread_alive(thr):
-	# print(thr)
-	# return True
-	# try:
-		# l = thr.is_alive()
-	# except TypeError:
-		# return False
-	# return l
-	print(thr)
-	thr.join(timeout=0.0)
-	# print(thr.is_alive())
-	return thr.is_alive()
 
 # # Read a file to send
 # file = open("declaration.txt", "r").read()
-# send_pkt= make_pkt(0, file)
+# send_pkt= make_pkt_snd(0, file)
 # print(send_pkt)
 # file = file[20:]
-# send_pkt= make_pkt(0, file)
+# send_pkt= make_pkt_snd(0, file)
 # print(send_pkt)
 # file = file[20:]
-# send_pkt= make_pkt(0, file)
+# send_pkt= make_pkt_snd(0, file)
 # print(send_pkt)
 # print(len(send_pkt))
 # print(isCorrupt(send_pkt))
@@ -159,6 +80,7 @@ except ConnectionRefusedError:
 	s.close()
 	exit()
 
+
 message_OK = False
 # s.send(bytes(Message, encoding='utf-8'))
 
@@ -170,54 +92,94 @@ FSM = {"State 1": 1, # Wait for call 0 from above
 	  }
 
 
-data = open("declaration.txt", "r").read()
+file = open("declaration.txt", "r").read()
 state = FSM["State 1"]
-send_pkt = make_pkt(0, data)
-# udt_send(s, send_pkt)
 
-# timer = threading.Timer(2.0, udt_send, args=(s, send_pkt,))
-# timer.start()
-# while True:
-# 	# if not timer.is_alive():
-# 		# print("Timer dead")
-# 		# exit()
-# 	if not check_thread_alive(timer):
-# 		print("Timer dead")
-# 		exit()
-
-
+Timer = False
 while True:
-	sleep(1)
-	print("\nreceiving...")
-	rcvpkt_len, rcvpkt = rdt_rcv(s)
-	print("len:{}  data:{}".format(rcvpkt_len, rcvpkt))
-	send_pkt = make_pkt(0, data)
-	# print(send_pkt)
-	sleep(1)
-	print("\nsending... {}".format(send_pkt))
-	udt_send(s, send_pkt)
-
-while True:
-	sleep(0.1)
-	# print("State:{}".format(state))
-	rcvpkt_len, rcvpkt = rdt_rcv(s)
-	print("len:{}  data:{}".format(rcvpkt_len, rcvpkt))
 	if state == FSM["State 1"]:
-		print("State 1")
-		print("make_pkt")
-		send_pkt = make_pkt(0, data)
-		print("udt_send")
+		# print("\nreceiving...")
+		# rcvpkt_len, rcvpkt = rdt_rcv(s)
+		send_pkt = make_pkt_snd(0, file)
 		udt_send(s, send_pkt)
-		print("Timer start")
-		timer = threading.Timer(10.0, udt_send, args=(s, send_pkt,))
 		state = FSM["State 2"]
-		continue
-
-	if state == FSM["State 2"]:
-		print("State 2")
-		if rcvpkt_len != 0 and (isCorrupt(rcvpkt) or isACK(rcvpkt, 1)):
-			print("len:{}  isCorrupt:{}  isACK:{}".format(rcvpkt_len, isCorrupt(rcvpkt), isACK(rcvpkt, 1)))
+		print("Timer start @ State 1")
+		Timer = True
+		sleep(2)
+	elif state == FSM["State 2"]:
+		if Timer == False:
+			print("\nsending... {}".format(send_pkt))
+			udt_send(send_pkt)
+			Timer = True
+			print("Timer start @ State 2")
+			sleep(2)
+		print("\nreceiving...")
+		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 0):
+			print("Timer Stop @ State 2")
+			Timer = False
+			state = FSM["State 3"]
+			sleep(2)
+		else:
 			continue
+	elif state == FSM["State 3"]:
+		# rcvpkt_len, rcvpkt = rdt_rcv(s)
+		send_pkt = make_pkt_snd(1, file)
+		udt_send(s, send_pkt)
+		state = FSM["State 4"]
+		print("Timer start @ State 3")
+		Timer = True
+		sleep(2)
+	elif state == FSM["State 4"]:
+		if Timer == False:
+			print("\nsending... {}".format(send_pkt))
+			udt_send(send_pkt)
+			Timer = True
+			print("Timer start @ State 4")
+			sleep(2)
+		print("\nreceiving...")
+		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		if isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
+			print("Timer Stop @ State 2")
+			Timer = False
+			state = FSM["State 1"]
+			sleep(2)
+		else:
+			continue
+
+
+# while True:
+# 	sleep(1)
+# 	print("\nreceiving...")
+# 	rcvpkt_len, rcvpkt = rdt_rcv(s)
+# 	print("len:{}  data:{}".format(rcvpkt_len, rcvpkt))
+# 	send_pkt = make_pkt_snd(0, data)
+# 	# print(send_pkt)
+# 	sleep(1)
+# 	print("\nsending... {}".format(send_pkt))
+# 	udt_send(s, send_pkt)
+
+# while True:
+# 	sleep(0.1)
+# 	# print("State:{}".format(state))
+# 	rcvpkt_len, rcvpkt = rdt_rcv(s)
+# 	print("len:{}  data:{}".format(rcvpkt_len, rcvpkt))
+# 	if state == FSM["State 1"]:
+# 		print("State 1")
+# 		print("make_pkt_snd")
+# 		send_pkt = make_pkt_snd(0, data)
+# 		print("udt_send")
+# 		udt_send(s, send_pkt)
+# 		print("Timer start")
+# 		timer = threading.Timer(10.0, udt_send, args=(s, send_pkt,))
+# 		state = FSM["State 2"]
+# 		continue
+
+# 	if state == FSM["State 2"]:
+# 		print("State 2")
+# 		if rcvpkt_len != 0 and (isCorrupt(rcvpkt) or isACK(rcvpkt, 1)):
+# 			print("len:{}  isCorrupt:{}  isACK:{}".format(rcvpkt_len, isCorrupt(rcvpkt), isACK(rcvpkt, 1)))
+# 			continue
 
 
 
