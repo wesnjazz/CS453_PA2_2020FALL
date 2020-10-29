@@ -1,8 +1,15 @@
 from socket import *
 import sys
-from time import sleep
 import threading
 from utils import *
+from time import sleep
+from datetime import datetime
+
+
+def get_date_time_str():
+	now = datetime.now()
+	dt = now.strftime("%m/%d/%Y %H:%M:%S")
+	return dt
 
 
 # Check the number of command line arguments
@@ -53,6 +60,10 @@ maxWaitTime = 15
 s.settimeout(maxWaitTime)
 
 
+
+name = "Ziwei Hu"
+print("Name: {} \tDate/Time: {}".format(name, get_date_time_str()))
+
 ###  Connection  ###
 try:
 	# Connect to the server
@@ -69,33 +80,41 @@ print("[+] Connected.")
 
 message_OK = False
 
-
+###### Finite State Machine ######
 FSM = {"State 1": 1, # Wait for call 0 from above
 	   "State 2": 2, # Wait for ACK 0
 	   "State 3": 3, # Wait for call 1 from above
 	   "State 4": 4  # Wait for ACK 1
 	  }
 state = FSM["State 1"]
+
+###### Timer threads ######
 threads = []
 time_val = 7.0
 
+###### File ######
 file = open("declaration-short.txt", "r").read()
 num_bytes_to_send = 80
 print("\n[+] File opened. Sending first {} bytes:\n[{}]".format(num_bytes_to_send, file[:num_bytes_to_send]))
 what_to_send = file[:num_bytes_to_send]
-sent_bytes = ""
+snt_bytes = ""
+
+###### Statistics ######
+num_pkt_snt = 0
+num_pkt_rcv = 0
+num_crpt_msg_rcv = 0
+num_timeouts = 0
 
 sleep(1)
-while len(sent_bytes) < num_bytes_to_send:
+while len(snt_bytes) < num_bytes_to_send:
 	print("\nCurrent file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 	if state == FSM["State 1"]:
 		print("\n[State 1]")
 		# print("\nreceiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
-		send_pkt = make_pkt_snd(0, file)
 		print("State 1 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
+		send_pkt = make_pkt_snd(0, file)
 		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
-		# timer = RepeatingTimer(time_val, udt_send(s, send_pkt,))
 		threads.append(timer)
 		print("State 1 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 		print("\t  last thread: {}".format(threads[-1]))
@@ -104,14 +123,15 @@ while len(sent_bytes) < num_bytes_to_send:
 		print("\t  last thread: {}".format(threads[-1]))
 		print("State 1 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
 		udt_send(s, send_pkt)
+		num_pkt_snt += 1
 		state = FSM["State 2"]
 		sleep(0.1)
 	elif state == FSM["State 2"]:
 		print("\n[State 2]")
 		if len(threads) == 0:
+			num_timeouts += 1
 			print("State 2 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 			print("\t  last thread: {}".format(threads[-1]))
-			# timer = RepeatingTimer(time_val, udt_send, (s, send_pkt,))
 			timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
 			threads.append(timer)
 			print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
@@ -123,6 +143,7 @@ while len(sent_bytes) < num_bytes_to_send:
 			sleep(0.1)
 		print("receiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		num_pkt_rcv += 1
 		print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 0):
 			print("\tState 2 - not isCorrupt() && isACK(0)")
@@ -135,6 +156,8 @@ while len(sent_bytes) < num_bytes_to_send:
 			state = FSM["State 3"]
 			sleep(0.1)
 		elif isCorrupt(rcvpkt) or isACK(rcvpkt, 1):
+			if isCorrupt(rcvpkt):
+				num_crpt_msg_rcv += 1
 			print("\tState 2 - isCorrupt() || isACK(1)")
 			sleep(0.1)
 			continue
@@ -142,9 +165,8 @@ while len(sent_bytes) < num_bytes_to_send:
 		print("\n[State 3]")
 		# print("\nreceiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
-		send_pkt = make_pkt_snd(1, file)
 		print("State 3 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
-		# timer = RepeatingTimer(time_val, udt_send, (s, send_pkt,))
+		send_pkt = make_pkt_snd(1, file)
 		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
 		threads.append(timer)
 		print("State 3 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
@@ -154,14 +176,15 @@ while len(sent_bytes) < num_bytes_to_send:
 		print("\t  last thread: {}".format(threads[-1]))
 		print("State 3 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
 		udt_send(s, send_pkt)
+		num_pkt_snt += 1
 		state = FSM["State 4"]
 		sleep(0.1)
 	elif state == FSM["State 4"]:
 		print("\n[State 4]")
 		if len(threads) == 0:
+			num_timeouts += 1
 			print("State 4 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 			print("State 4 - last thread:{}".format(threads[-1]))
-			# timer = RepeatingTimer(time_val, udt_send, (s, send_pkt,))
 			timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
 			threads.append(timer)
 			print("State 4 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
@@ -173,6 +196,7 @@ while len(sent_bytes) < num_bytes_to_send:
 			sleep(0.1)
 		print("receiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		num_pkt_rcv += 1
 		print("\nState 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
 			print("\tState 4 - not isCorrupt() && isACK(1)")
@@ -185,19 +209,31 @@ while len(sent_bytes) < num_bytes_to_send:
 			state = FSM["State 1"]
 			print("Succefully transferred {} bytes".format(len(send_pkt)))
 			print("Succefully transferred [{}]".format(send_pkt))
-			sent_bytes += extract(send_pkt)
-			print("Total sent_bytes: {} bytes\n\n".format(len(sent_bytes)))
+			snt_bytes += extract(send_pkt)
+			print("Total sent_bytes: {} bytes\n\n".format(len(snt_bytes)))
 			file = file[20:]
 			sleep(0.1)
 		elif isCorrupt(rcvpkt) or isACK(rcvpkt, 0):
+			if isCorrupt(rcvpkt):
+				num_crpt_msg_rcv += 1
 			print("\tState 4 - isCorrupt() || isACK(0)")
 			sleep(0.1)
 			continue
 
 
+print("\n\nName: {} \tDate/Time: {}".format(name, get_date_time_str()))
+chk_send_bytes = checksum(snt_bytes)
+print("Checksum of total sent bytes: [{}]".format(chk_send_bytes))
+print("# of packets sent:      {}".format(num_pkt_snt))
+print("# of packets received:  {}".format(num_pkt_rcv))
+print("# of corrupted message: {}".format(num_crpt_msg_rcv))
+print("# of timeouts:          {}".format(num_timeouts))
 
-print("What to send: [{}] bytes. \n[{}]".format(len(what_to_send), what_to_send))
-print("Sent: [{}] bytes. \n[{}]".format(len(sent_bytes), sent_bytes))
+# chk_what_to_send = checksum(what_to_send)
+# print("Checksum of what_to_send bytes: [{}]".format(chk_send_bytes))
+
+# print("What to send: [{}] bytes. \n[{}]".format(len(what_to_send), what_to_send))
+# print("Sent: [{}] bytes. \n[{}]".format(len(snt_bytes), snt_bytes))
 		# print("\nState 4")
 		# if Timer == False:
 		# 	print("\nState 4 - sending... [{}] {} bytes".format(send_pkt, len(send_pkt)))
@@ -263,64 +299,64 @@ exit()
 
 
 
-###  OK message  ###
-while not message_OK:
-	try:
-		sleep(0.5)
-		# Send the message
-		# data = s.recv(1024).decode("utf-8")
+# ###  OK message  ###
+# while not message_OK:
+# 	try:
+# 		sleep(0.5)
+# 		# Send the message
+# 		# data = s.recv(1024).decode("utf-8")
 		
-		print("receiving...")
-		data_len, data = rdt_rcv(s)
-		sleep(1)
-		print("sending...")
-		s.send(bytes(Message, encoding='utf-8'))
-		sleep(1)
+# 		print("receiving...")
+# 		data_len, data = rdt_rcv(s)
+# 		sleep(1)
+# 		print("sending...")
+# 		s.send(bytes(Message, encoding='utf-8'))
+# 		sleep(1)
 
-		data_split = data.split()
-		print(data_len, data, data_split)
-		print("CONTINUE")
-		continue
-		# if not data:
-			# print("no data")
-			# break
-		if len(data) != 0:
-			if data_split[0] == "OK":
-				message_OK = True
-			if data_split[0] == "ERROR":
-				print(data)
-				# break
-			if data_split[0] == "WAITING":
-				print(data)
-				# sleep(5)
-		else:
-			print("No data")
-			# sleep(1)
-		# sleep(1)
-	except KeyboardInterrupt:
-		print("KeyboardInterrupt")
-		s.close()
-		break
+# 		data_split = data.split()
+# 		print(data_len, data, data_split)
+# 		print("CONTINUE")
+# 		continue
+# 		# if not data:
+# 			# print("no data")
+# 			# break
+# 		if len(data) != 0:
+# 			if data_split[0] == "OK":
+# 				message_OK = True
+# 			if data_split[0] == "ERROR":
+# 				print(data)
+# 				# break
+# 			if data_split[0] == "WAITING":
+# 				print(data)
+# 				# sleep(5)
+# 		else:
+# 			print("No data")
+# 			# sleep(1)
+# 		# sleep(1)
+# 	except KeyboardInterrupt:
+# 		print("KeyboardInterrupt")
+# 		s.close()
+# 		break
 
-	except timeout:
-		# After Maximum time, the server is closing the opened socket and exit.
-		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
-		s.close()
-		break
+# 	except timeout:
+# 		# After Maximum time, the server is closing the opened socket and exit.
+# 		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+# 		s.close()
+# 		break
 
-	except ConnectionResetError:
-		print("connection was CLOSED.")
-		s.close()
-		break
+# 	except ConnectionResetError:
+# 		print("connection was CLOSED.")
+# 		s.close()
+# 		break
 
-print("OK Message")
-
-
-# Read a file to send
-file = open("declaration.txt", "r").read()
+# print("OK Message")
 
 
+# # Read a file to send
+# file = open("declaration.txt", "r").read()
 
 
-# Close the socket
-s.close()
+
+
+# # Close the socket
+# s.close()

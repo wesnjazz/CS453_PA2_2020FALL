@@ -1,8 +1,15 @@
 from socket import *
 import sys
-from time import sleep
 import threading
 from utils import *
+from time import sleep
+from datetime import datetime
+
+
+def get_date_time_str():
+	now = datetime.now()
+	dt = now.strftime("%m/%d/%Y %H:%M:%S")
+	return dt
 
 
 # Check the number of command line arguments
@@ -61,6 +68,11 @@ sender_or_receiver = "R"
 # s.bind((server_IP, server_Port))
 # s.listen(5)
 
+
+
+name = "Ziwei Hu"
+print("Name: {} \tDate/Time: {}".format(name, get_date_time_str()))
+
 ## gaia server (connect as a client) ##
 # Create an TCP socket
 s = socket(AF_INET, SOCK_STREAM)
@@ -85,20 +97,36 @@ FSM = {"State 1": 1, # Wait for call 0 from below
 
 
 Timer = False
-file = ""
+# rcv_bytes = ""
 conn, address = s.accept()
 state = FSM["State 1"]
+
+rcv_bytes = ""
+
+###### Statistics ######
+num_pkt_snt = 0
+num_pkt_rcv = 0
+num_crpt_msg_rcv = 0
+
 while True:
 	if state == FSM["State 1"]:
 		print("\nState 1")
 		print("receiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(conn)
+		try:
+			rcvpkt_len, rcvpkt = rdt_rcv(conn)
+		except ConnectionAbortedError:
+			print("[-] Connection was closed.")
+			break
+		if rcvpkt_len == 0:
+			print("No data received.")
+			break
+		num_pkt_rcv += 1
 		print("State 1 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 0):
 			print("\tState 1 - not isCorrupt() && has_seq(0)")
-			print("\tfile:[{}]".format(file))
-			file += extract(rcvpkt)
-			print("\tfile:[{}]".format(file))
+			print("\trcv_bytes:[{}]".format(rcv_bytes))
+			rcv_bytes += extract(rcvpkt)
+			print("\trcv_bytes:[{}]".format(rcv_bytes))
 			data = rcvpkt[4:-6]
 			print("\tdata:[{}]".format(data), end=" ")
 			chk_rcv = checksum(data)
@@ -106,9 +134,15 @@ while True:
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(conn, send_pkt)
+			num_pkt_snt += 1
 			sleep(0.1)
 			state = FSM["State 2"]
 		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 1):
+			if isCorrupt(rcvpkt):
+				print("[-] Corrupted message: [{}]".format(rcvpkt))
+				num_crpt_msg_rcv += 1
+			else:
+				print("[-] expected seq: {}   received seq: {}".format(0, rcvpkt[0]))
 			print("\tState 1 - isCorrupt() || has_seq(1)")
 			chk_rcv = checksum(data)
 			print("\tchk_rcv:[{}]".format(chk_rcv))
@@ -119,13 +153,18 @@ while True:
 	if state == FSM["State 2"]:
 		print("\nState 2")
 		print("receiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(conn)
+		try:
+			rcvpkt_len, rcvpkt = rdt_rcv(conn)
+			num_pkt_rcv += 1
+		except ConnectionAbortedError:
+			print("[-] Connection was closed.")
+			break
 		print("State 2 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 1):
 			print("\tState 2 - not isCorrupt() && has_seq(1)")
-			# file += extract(rcvpkt)
-			# file += extract(rcvpkt)
-			print("\tfile:[{}]".format(file))
+			# rcv_bytes += extract(rcvpkt)
+			# rcv_bytes += extract(rcvpkt)
+			print("\trcv_bytes:[{}]".format(rcv_bytes))
 			data = rcvpkt[4:-6]
 			print("\tdata:[{}]".format(data), end=" ")
 			chk_rcv = checksum(data)
@@ -133,9 +172,15 @@ while True:
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(conn, send_pkt)
+			num_pkt_snt += 1
 			sleep(0.1)
 			state = FSM["State 1"]
 		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 0):
+			if isCorrupt(rcvpkt):
+				print("[-] Corrupted message: [{}]".format(rcvpkt))
+				num_crpt_msg_rcv += 1
+			else:
+				print("[-] expected seq: {}   received seq: {}".format(1, rcvpkt[0]))
 			print("\tState 2 - isCorrupt() || has_seq(0)")
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
@@ -143,10 +188,18 @@ while True:
 			sleep(0.1)
 
 
+print("\n\nName: {} \tDate/Time: {}".format(name, get_date_time_str()))
+chk_rcv_bytes = checksum(rcv_bytes)
+print("Checksum of total received bytes: [{}]".format(chk_rcv_bytes))
+print("# of packets sent:      {}".format(num_pkt_snt))
+print("# of packets received:  {}".format(num_pkt_rcv))
+print("# of corrupted message: {}".format(num_crpt_msg_rcv))
 
 
-
-
+print("[-] Closing the connection...", end=" ")
+s.close()
+print("closed.")
+exit()
 
 
 
@@ -226,5 +279,3 @@ while True:
 # 		s.close()
 # 		break
 
-
-s.close()
