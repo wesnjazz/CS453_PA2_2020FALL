@@ -95,74 +95,131 @@ FSM = {"State 1": 1, # Wait for call 0 from above
 file = open("declaration.txt", "r").read()
 state = FSM["State 1"]
 
+timer = threading.Timer(60.0, somefunction())
+timer.start()
+
+threads = []
+
 Timer = False
-while True:
+while len(file) > 0:
+	print("size of file:[{}] first-five:[{}]".format(len(file), file[:5]))
 	if state == FSM["State 1"]:
 		print("State 1")
 		# print("\nreceiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		send_pkt = make_pkt_snd(0, file)
-		print("size of file:[{}] first-five:[{}]".format(len(file), file[:5]), end="")
 		file = file[20:]
-		print("\tsize of file:[{}] first-five:[{}]".format(len(file), file[:5]))
+		print("\nState 1 - size of file:[{}] first-five:[{}]".format(len(file), file[:5]))
 		print("\nState 1 - sending... [{}]".format(send_pkt))
-		udt_send(s, send_pkt)
+		timer = threading.Timer(10.0, udt_send, args=(s, send_pkt,))
+		threads.append(timer)
+		print("\nState 1 - Timer thread added. # of threads:{},  threads:{}".format(len(threads), threads))
+		timer.start()
+		# udt_send(s, send_pkt)
 		state = FSM["State 2"]
-		print("Timer start @ State 1")
-		Timer = True
+		# print("Timer start @ State 1")
+		# Timer = True
 		sleep(2)
 	elif state == FSM["State 2"]:
-		print("State 2")
-		if Timer == False:
+		print("\nState 2")
+		if len(threads) == 0:
+			print("\nState 2 - Timer thread is stopped.... # of threads:{},  threads:{}".format(len(threads), threads))
 			print("\nState 2 - sending... [{}]".format(send_pkt))
-			udt_send(s, send_pkt)
-			Timer = True
-			print("Timer start @ State 2")
+			timer = threading.Timer(10.0, udt_send, args=(s, send_pkt,))
+			threads.append(timer)
+			print("\tState 2 - Timer thread added. # of threads:{},  threads:{}".format(len(threads), threads))
+			timer.start()
+			# udt_send(s, send_pkt)
+			# Timer = True
+			# print("Timer start @ State 2")
 			sleep(2)
 		print("\nreceiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(s)
-		print("State 2 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
+		print("\nState 2 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 0):
-			print("\t\tState 2 - not isCorrupt() && isACK(0)")
-			print("Timer Stop @ State 2")
-			Timer = False
+			print("\n\tState 2 - not isCorrupt() && isACK(0)")
+			print("\n\tState 2 - Stopping Timer thread.... # of threads:{},  threads:{}".format(len(threads), threads))
+			threads[0].join()
+			print("\n\tState 2 - Timer thread stopped .... # of threads:{},  threads:{}".format(len(threads), threads))
+			# print("Timer Stop @ State 2")
+			# Timer = False
 			state = FSM["State 3"]
 			sleep(2)
-		else:
-			print("\t\tState 2 - isCorrupt() || isACK(1)")
+		elif isCorrupt(rcvpkt) or isACK(rcvpkt, 1):
+			print("\n\tState 2 - isCorrupt() || isACK(1)")
 			sleep(2)
 			continue
 	elif state == FSM["State 3"]:
 		print("State 3")
+		# print("\nreceiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		send_pkt = make_pkt_snd(1, file)
+		print("\nState 3 - size of file:[{}] first-five:[{}]".format(len(file), file[:5]))
 		print("\nState 3 - sending... [{}]".format(send_pkt))
-		udt_send(s, send_pkt)
+		timer = threading.Timer(10.0, udt_send, args=(s, send_pkt,))
+		threads.append(timer)
+		print("\nState 3 - Timer thread added. # of threads:{},  threads:{}".format(len(threads), threads))
+		timer.start()
+		# udt_send(s, send_pkt)
 		state = FSM["State 4"]
-		print("Timer start @ State 3")
-		Timer = True
+		# print("Timer start @ State 1")
+		# Timer = True
 		sleep(2)
+
+		# print("State 3")
+		# # rcvpkt_len, rcvpkt = rdt_rcv(s)
+		# send_pkt = make_pkt_snd(1, file)
+		# print("\nState 3 - sending... [{}]".format(send_pkt))
+		# udt_send(s, send_pkt)
+		# state = FSM["State 4"]
+		# print("Timer start @ State 3")
+		# Timer = True
+		# sleep(2)
 	elif state == FSM["State 4"]:
-		print("State 4")
-		if Timer == False:
+		print("\nState 4")
+		if len(threads) == 0:
+			print("\nState 4 - Timer thread is stopped.... # of threads:{},  threads:{}".format(len(threads), threads))
 			print("\nState 4 - sending... [{}]".format(send_pkt))
-			udt_send(s, send_pkt)
-			Timer = True
-			print("Timer start @ State 4")
+			timer = threading.Timer(10.0, udt_send, args=(s, send_pkt,))
+			threads.append(timer)
+			print("\tState 4 - Timer thread added. # of threads:{},  threads:{}".format(len(threads), threads))
+			timer.start()
 			sleep(2)
 		print("\nreceiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(s)
-		print("State 4 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
-		if isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
-			print("\t\tState 4 - not isCorrupt() && isACK(1)")
-			print("Timer Stop @ State 2")
-			Timer = False
+		print("\nState 4 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
+		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
+			print("\n\tState 4 - not isCorrupt() && isACK(1)")
+			print("\n\tState 4 - Stopping Timer thread.... # of threads:{},  threads:{}".format(len(threads), threads))
+			threads[0].join()
+			print("\n\tState 4 - Timer thread stopped .... # of threads:{},  threads:{}".format(len(threads), threads))
 			state = FSM["State 1"]
 			sleep(2)
-		else:
-			print("\t\tState 4 - isCorrupt() || isACK(0)")
+		elif isCorrupt(rcvpkt) or isACK(rcvpkt, 0):
+			print("\n\tState 4 - isCorrupt() || isACK(0)")
 			sleep(2)
 			continue
+
+		# print("State 4")
+		# if Timer == False:
+		# 	print("\nState 4 - sending... [{}]".format(send_pkt))
+		# 	udt_send(s, send_pkt)
+		# 	Timer = True
+		# 	print("Timer start @ State 4")
+		# 	sleep(2)
+		# print("\nreceiving...")
+		# rcvpkt_len, rcvpkt = rdt_rcv(s)
+		# print("State 4 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
+		# if isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
+		# 	print("\t\tState 4 - not isCorrupt() && isACK(1)")
+		# 	print("Timer Stop @ State 2")
+		# 	Timer = False
+		# 	state = FSM["State 1"]
+		# 	sleep(2)
+		# else:
+		# 	print("\t\tState 4 - isCorrupt() || isACK(0)")
+		# 	sleep(2)
+		# 	continue
 
 
 # while True:
@@ -200,7 +257,7 @@ while True:
 
 
 
-
+s.close()
 exit()
 
 

@@ -108,7 +108,7 @@ while True:
 			udt_send(conn, send_pkt)
 			sleep(2)
 			state = FSM["State 2"]
-		else:
+		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 1):
 			print("\t\tState 1 - isCorrupt() || has_seq(1)")
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
 			print("\nsending... [{}]".format(send_pkt))
@@ -132,7 +132,7 @@ while True:
 			udt_send(conn, send_pkt)
 			sleep(2)
 			state = FSM["State 1"]
-		else:
+		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 0):
 			print("\t\tState 2 - isCorrupt() || has_seq(0)")
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\nsending... [{}]".format(send_pkt))
