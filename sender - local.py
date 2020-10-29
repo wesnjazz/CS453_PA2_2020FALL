@@ -19,10 +19,10 @@ if len(sys.argv) < 5:
 
 # Server IP address (str)
 # Server Port number (int)
-# server_IP = "127.0.0.1"
-# server_Port = 80
-server_IP = "gaia.cs.umass.edu"
-server_Port = 20000
+server_IP = "127.0.0.1"
+server_Port = 80
+# server_IP = "gaia.cs.umass.edu"
+# server_Port = 20000
 
 # Connection ID of the client
 ID_str = sys.argv[1]
@@ -48,30 +48,26 @@ transmission_timeout = int(transmission_timeout_str)
 sender_or_receiver = "S"
 
 # Message: in the form of "HELLO S <loss_rate> <corrupt_rate> <max_delay> <ID>" with a white space between them
-Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
-print("Message: {}".format(Message))
+# Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
+# print("Message: {}".format(Message))
 # print(Message.split())
 # Message = "HELLO S 0.0 0.0 0 1234"
 
-
-
-
-###### Print out INFO ######
-name = "Ziwei Hu"
-print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
-
-
-###### Create a TCP socket ######
+# Create an TCP socket
 s = socket(AF_INET, SOCK_STREAM)
 # Set the maximum wait time for the client
 maxWaitTime = 15
 s.settimeout(maxWaitTime)
 
 
-######  Connect through TCP socket  ######
+
+name = "Ziwei Hu"
+print("Name: {} \tDate/Time: {}".format(name, get_date_time_str()))
+
+###  Connection  ###
 try:
 	# Connect to the server
-	print("[-] Connecting to the {}:{}".format(server_IP, server_Port))
+	print("[.] Connecting to the {}:{}".format(server_IP, server_Port))
 	s.connect((server_IP, server_Port))
 except OSError:
 	print("[-] A connect request was made on an already connected socket")
@@ -82,57 +78,7 @@ except ConnectionRefusedError:
 	exit()
 print("[+] Connected.")
 
-
-
-###### Sending HELLO message to the server ######
-msg_OK = False
-waiting = False
-while not msg_OK:
-	sleep(0.1)
-	try:
-		# Send the message if not received WAITING message from the server
-		if not waiting:
-			print("[-] Sending a message: [{}]".format(Message))
-			s.send(bytes(Message, encoding="utf-8"))
-			sleep(1)
-
-		# Receive a message from the server
-		print("[-] Receiving...")
-		msg_len, msg = rdt_rcv(s)
-		msg_split = msg.split()
-		sleep(1)
-		if len(msg) != 0:
-			print("[+] Received a message: [{}]".format(msg))
-			if msg_split[0] == "OK":
-				# When get OK message, then proceed to the next step
-				msg_OK = True
-				break
-			if msg_split[0] == "ERROR":
-				# When get ERROR message, then exit the program after closing the socket
-				s.close()
-				exit()
-			if msg_split[0] == "WAITING":
-				# When get WAITING message, then wait for the next message
-				waiting = True
-		else:
-			# When received no data from the server
-			print("No data")
-			sleep(0.1)
-	except KeyboardInterrupt:
-		print("KeyboardInterrupt")
-		s.close()
-		exit()
-	except timeout:
-		# After Maximum time, the server is closing the opened socket and exit.
-		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
-		s.close()
-		exit()
-	except ConnectionResetError:
-		print("connection was CLOSED.")
-		s.close()
-		exit()
-
-
+message_OK = False
 
 ###### Finite State Machine ######
 FSM = {"State 1": 1, # Wait for call 0 from above
@@ -151,15 +97,15 @@ file = open("declaration-short.txt", "r").read()
 num_bytes_to_send = 80
 print("\n[+] File opened. Sending first {} bytes:\n[{}]".format(num_bytes_to_send, file[:num_bytes_to_send]))
 what_to_send = file[:num_bytes_to_send]
+snt_bytes = ""
 
 ###### Statistics ######
-snt_bytes = ""
 num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 num_timeouts = 0
 
-sleep(0.5)
+sleep(1)
 while len(snt_bytes) < num_bytes_to_send:
 	print("\nCurrent file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 	if state == FSM["State 1"]:
@@ -282,10 +228,135 @@ print("# of packets sent:      {}".format(num_pkt_snt))
 print("# of packets received:  {}".format(num_pkt_rcv))
 print("# of corrupted message: {}".format(num_crpt_msg_rcv))
 print("# of timeouts:          {}".format(num_timeouts))
-print("sent data:\n[{}]".format(snt_bytes))
 
-###### Closing the connection ######
-print("[-] Closing the connection...")
+# chk_what_to_send = checksum(what_to_send)
+# print("Checksum of what_to_send bytes: [{}]".format(chk_send_bytes))
+
+# print("What to send: [{}] bytes. \n[{}]".format(len(what_to_send), what_to_send))
+# print("Sent: [{}] bytes. \n[{}]".format(len(snt_bytes), snt_bytes))
+		# print("\nState 4")
+		# if Timer == False:
+		# 	print("\nState 4 - sending... [{}] {} bytes".format(send_pkt, len(send_pkt)))
+		# 	udt_send(s, send_pkt)
+		# 	Timer = True
+		# 	print("Timer start @ State 4")
+		# 	sleep(1)
+		# print("\nreceiving...")
+		# rcvpkt_len, rcvpkt = rdt_rcv(s)
+		# print("\nState 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		# if isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
+		# 	print("\t\tState 4 - not isCorrupt() && isACK(1)")
+		# 	print("Timer Stop @ State 2")
+		# 	Timer = False
+		# 	state = FSM["State 1"]
+		# 	sleep(1)
+		# else:
+		# 	print("\t\tState 4 - isCorrupt() || isACK(0)")
+		# 	sleep(1)
+		# 	continue
+
+
+# while True:
+# 	sleep(1)
+# 	print("\nreceiving...")
+# 	rcvpkt_len, rcvpkt = rdt_rcv(s)
+# 	print("len:[{}]  data:{}".format(rcvpkt_len, rcvpkt))
+# 	send_pkt = make_pkt_snd(0, data)
+# 	# print(send_pkt)
+# 	sleep(1)
+# 	print("\nsending... {}".format(send_pkt))
+# 	udt_send(s, send_pkt)
+
+# while True:
+# 	sleep(0.1)
+# 	# print("State:{}".format(state))
+# 	rcvpkt_len, rcvpkt = rdt_rcv(s)
+# 	print("len:{}  data:{}".format(rcvpkt_len, rcvpkt))
+# 	if state == FSM["State 1"]:
+# 		print("\nState 1")
+# 		print("make_pkt_snd")
+# 		send_pkt = make_pkt_snd(0, data)
+# 		print("udt_send")
+# 		udt_send(s, send_pkt)
+# 		print("Timer start")
+# 		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+# 		state = FSM["State 2"]
+# 		continue
+
+# 	if state == FSM["State 2"]:
+# 		print("\nState 2")
+# 		if rcvpkt_len != 0 and (isCorrupt(rcvpkt) or isACK(rcvpkt, 1)):
+# 			print("len:{}  isCorrupt:{}  isACK:{}".format(rcvpkt_len, isCorrupt(rcvpkt), isACK(rcvpkt, 1)))
+# 			continue
+
+
+
 s.close()
-print("[+] Connection is closed.")
 exit()
+
+
+
+
+
+
+# ###  OK message  ###
+# while not message_OK:
+# 	try:
+# 		sleep(0.5)
+# 		# Send the message
+# 		# data = s.recv(1024).decode("utf-8")
+		
+# 		print("receiving...")
+# 		data_len, data = rdt_rcv(s)
+# 		sleep(1)
+# 		print("sending...")
+# 		s.send(bytes(Message, encoding='utf-8'))
+# 		sleep(1)
+
+# 		data_split = data.split()
+# 		print(data_len, data, data_split)
+# 		print("CONTINUE")
+# 		continue
+# 		# if not data:
+# 			# print("no data")
+# 			# break
+# 		if len(data) != 0:
+# 			if data_split[0] == "OK":
+# 				message_OK = True
+# 			if data_split[0] == "ERROR":
+# 				print(data)
+# 				# break
+# 			if data_split[0] == "WAITING":
+# 				print(data)
+# 				# sleep(5)
+# 		else:
+# 			print("No data")
+# 			# sleep(1)
+# 		# sleep(1)
+# 	except KeyboardInterrupt:
+# 		print("KeyboardInterrupt")
+# 		s.close()
+# 		break
+
+# 	except timeout:
+# 		# After Maximum time, the server is closing the opened socket and exit.
+# 		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+# 		s.close()
+# 		break
+
+# 	except ConnectionResetError:
+# 		print("connection was CLOSED.")
+# 		s.close()
+# 		break
+
+# print("OK Message")
+
+
+# # Read a file to send
+# file = open("declaration.txt", "r").read()
+
+
+
+
+# # Close the socket
+# s.close()
