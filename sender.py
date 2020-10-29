@@ -147,8 +147,8 @@ threads = []
 time_val = 7.0
 
 ###### File ######
-file = open("declaration-short.txt", "r").read()
-num_bytes_to_send = 80
+file = open("declaration.txt", "r").read()
+num_bytes_to_send = 200
 print("\n[+] File opened. Sending first {} bytes:\n[{}]".format(num_bytes_to_send, file[:num_bytes_to_send]))
 what_to_send = file[:num_bytes_to_send]
 
