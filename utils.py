@@ -53,12 +53,13 @@ def make_pkt_snd(seq, data):
 
 def make_pkt_rcv(ACK, seq, chk_rcv):
     pkt = "  a                      chksm"
-    pkt = pkt.replace("a", str(ACK))
+    pkt = pkt.replace("a", str(seq))
     pkt = pkt.replace("chksm", chk_rcv)
     return pkt
 
 def udt_send(socket, send_pkt):
-	socket.send(bytes(send_pkt, encoding='utf-8'))
+    socket.send(bytes(send_pkt, encoding='utf-8'))
+    print("\t\tudt_send(): [{}]".format(send_pkt))
 
 def has_seq(rcvpkt, seq):
     return int(rcvpkt[0]) == seq
@@ -88,3 +89,8 @@ def check_thread_alive(thr):
     thr.join(timeout=0.0)
     # print(thr.is_alive())
     return thr.is_alive()
+
+
+def cancel_timers(threads):
+    for t in threads[::-1]:
+        t.cancel()

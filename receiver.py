@@ -70,9 +70,9 @@ s.listen(5)
 
 
 # Set the maximum wait time for the client
-maxWaitTime = 15
+maxWaitTime = 30
 s.settimeout(maxWaitTime)
-# s.send(bytes(Message, encoding='utf-8'))
+# s.send(bytes(Message, encoding='utf-     8'))
 
 
 message_OK = False
@@ -90,54 +90,57 @@ conn, address = s.accept()
 state = FSM["State 1"]
 while True:
 	if state == FSM["State 1"]:
-		print("State 1")
-		print("\nreceiving...")
+		print("\nState 1")
+		print("receiving...")
 		rcvpkt_len, rcvpkt = rdt_rcv(conn)
-		print("State 1 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
+		print("State 1 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 0):
-			print("\t\tState 1 - not isCorrupt() && has_seq(0)")
-			print("\t\t\tfile:[{}]".format(file), end=" ")
+			print("\tState 1 - not isCorrupt() && has_seq(0)")
+			print("\tfile:[{}]".format(file))
 			file += extract(rcvpkt)
-			print("\t\t\tfile:[{}]".format(file))
+			print("\tfile:[{}]".format(file))
 			data = rcvpkt[4:-6]
-			print("\t\t\tdata:[{}]".format(data))
+			print("\tdata:[{}]".format(data), end=" ")
 			chk_rcv = checksum(data)
-			print("\t\t\tchk_rcv:[{}]".format(chk_rcv))
+			print("\t     chk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
-			print("\nsending... [{}]".format(send_pkt))
+			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(conn, send_pkt)
-			sleep(2)
+			# sleep(2)
 			state = FSM["State 2"]
 		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 1):
-			print("\t\tState 1 - isCorrupt() || has_seq(1)")
-			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
-			print("\nsending... [{}]".format(send_pkt))
-			udt_send(conn, send_pkt)
-			sleep(2)
-	if state == FSM["State 2"]:
-		print("State 2")
-		print("\nreceiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(conn)
-		print("State 2 - received : [{}], [{}]".format(rcvpkt_len, rcvpkt))
-		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 1):
-			print("\t\tState 2 - not isCorrupt() && has_seq(1)")
-			file += extract(rcvpkt)
-			print("\t\t\tfile:[{}]".format(file))
-			data = rcvpkt[4:-6]
-			print("\t\t\tdata:[{}]".format(data))
+			print("\tState 1 - isCorrupt() || has_seq(1)")
 			chk_rcv = checksum(data)
-			print("\t\t\tchk_rcv:[{}]".format(chk_rcv))
+			print("\tchk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
-			print("\nsending... [{}]".format(send_pkt))
+			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(conn, send_pkt)
-			sleep(2)
+			# sleep(2)
+	if state == FSM["State 2"]:
+		print("\nState 2")
+		print("receiving...")
+		rcvpkt_len, rcvpkt = rdt_rcv(conn)
+		print("State 2 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 1):
+			print("\tState 2 - not isCorrupt() && has_seq(1)")
+			# file += extract(rcvpkt)
+			# file += extract(rcvpkt)
+			print("\tfile:[{}]".format(file))
+			data = rcvpkt[4:-6]
+			print("\tdata:[{}]".format(data), end=" ")
+			chk_rcv = checksum(data)
+			print("\t     chk_rcv:[{}]".format(chk_rcv))
+			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
+			print("\t\tsending.... [{}]".format(send_pkt))
+			udt_send(conn, send_pkt)
+			# sleep(2)
 			state = FSM["State 1"]
 		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 0):
-			print("\t\tState 2 - isCorrupt() || has_seq(0)")
+			print("\tState 2 - isCorrupt() || has_seq(0)")
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
-			print("\nsending... [{}]".format(send_pkt))
+			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(conn, send_pkt)
-			sleep(2)
+			# sleep(2)
 
 
 
