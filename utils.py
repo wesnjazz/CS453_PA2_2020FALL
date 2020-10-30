@@ -53,7 +53,7 @@ def make_pkt_snd(seq, data):
 
 def make_pkt_rcv(ACK, seq, chk_rcv):
     pkt = "  a                      chksm"
-    pkt = pkt.replace("a", str(seq))
+    pkt = pkt.replace("a", str(ACK))
     pkt = pkt.replace("chksm", chk_rcv)
     return pkt
 
@@ -62,13 +62,80 @@ def udt_send(socket, send_pkt):
     print("\t\tudt_send(): [{}]".format(send_pkt))
 
 def has_seq(rcvpkt, seq):
-    return int(rcvpkt[0]) == seq
+    return str(rcvpkt[0]) == str(seq)
 
 def isACK(rcvpkt, ACK):
-	return int(rcvpkt[2]) == ACK
+	return str(rcvpkt[2]) == str(ACK)
 
-def isCorrupt(rcvpkt):
-	return len(rcvpkt) != 30
+def isCorrupt_rcv(rcvpkt):
+    digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    chk_ok = checksum_verifier(rcvpkt)
+    if chk_ok:
+        print("chk_ok")
+        return True
+    if str(rcvpkt[0]) not in ["0", "1"]:
+        print("[0] not in 0 or 1")
+        return True
+    if rcvpkt[1] != " ":
+        print("white [1]")
+        return True
+    if str(rcvpkt[2]) not in ["0", "1"]:
+        print("[2] not in 0 or 1")
+        return True
+    if rcvpkt[3] != " ":
+        print("white [3]")
+        return True
+    if rcvpkt[24] != " ":
+        print("white [24]")
+        return True
+    if rcvpkt[25] not in digit:
+        print("non digit [25]")
+        return True
+    if rcvpkt[26] not in digit:
+        print("non digit [26]")
+        return True
+    if rcvpkt[27] not in digit:
+        print("non digit [27]")
+        return True
+    if rcvpkt[28] not in digit:
+        print("non digit [28]")
+        return True
+    if rcvpkt[29] not in digit:
+        print("non digit [29]")
+        return True
+    return False
+
+def isCorrupt_snd(rcvpkt):
+    digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    chk_ok = checksum_verifier(rcvpkt)
+    if chk_ok:
+        print("chk_ok")
+        return True
+    if rcvpkt[:2] != "  ":
+        print("white [0:2]")
+        return True
+    if str(rcvpkt[2]) not in ["0", "1"]:
+        print("[2] not in 0 or 1")
+        return True
+    if rcvpkt[3:25] != "                      ":
+        print("white [3:25]")
+        return True
+    if rcvpkt[25] not in digit:
+        print("non digit [25]")
+        return True
+    if rcvpkt[26] not in digit:
+        print("non digit [26]")
+        return True
+    if rcvpkt[27] not in digit:
+        print("non digit [27]")
+        return True
+    if rcvpkt[28] not in digit:
+        print("non digit [28]")
+        return True
+    if rcvpkt[29] not in digit:
+        print("non digit [29]")
+        return True
+    return False
 
 def rdt_rcv(socket):
 	rcvpkt = socket.recv(1024).decode("utf-8")

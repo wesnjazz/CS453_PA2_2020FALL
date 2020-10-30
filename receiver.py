@@ -63,7 +63,7 @@ print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 ###### Create a TCP socket ######
 s = socket(AF_INET, SOCK_STREAM)
 # Set the maximum wait time for the client
-maxWaitTime = 15
+maxWaitTime = 20
 s.settimeout(maxWaitTime)
 
 
@@ -102,21 +102,25 @@ while not msg_OK:
 		sleep(1)
 		if len(msg) != 0:
 			print("[+] Received a message: [{}]".format(msg))
+			print("[+] Received a message: [{}]".format(msg.split()))
 			if msg_split[0] == "OK":
 				# When get OK message, then proceed to the next step
 				msg_OK = True
 				break
-			if msg_split[0] == "ERROR":
+			elif msg_split[0] == "ERROR":
 				# When get ERROR message, then exit the program after closing the socket
 				s.close()
 				exit()
-			if msg_split[0] == "WAITING":
+			elif msg_split[0] == "WAITING":
 				# When get WAITING message, then wait for the next message
 				waiting = True
+			else:
+				s.close()
+				exit()
 		else:
 			# When received no data from the server
 			print("No data")
-			sleep(0.1)
+			sleep(0.2)
 	except KeyboardInterrupt:
 		print("KeyboardInterrupt")
 		s.close()
@@ -148,7 +152,7 @@ num_crpt_msg_rcv = 0
 sleep(0.5)
 while True:
 	if state == FSM["State 1"]:
-		print("\nState 1")
+		print("\n[State 1]")
 		print("receiving...")
 		try:
 			rcvpkt_len, rcvpkt = rdt_rcv(s)
@@ -157,39 +161,42 @@ while True:
 			break
 		if rcvpkt_len == 0:
 			print("No data received.")
+			sleep(1)
+			# continue
 			break
 		num_pkt_rcv += 1
 		print("State 1 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 0):
-			print("\tState 1 - not isCorrupt() && has_seq(0)")
+		pay_load = rcvpkt[4:-6]
+		print("\tpay_load:[{}]".format(pay_load), end=" ")
+		chk_rcv = checksum(pay_load)
+		print("\t     chk_rcv:[{}]".format(chk_rcv))
+		if not isCorrupt_rcv(rcvpkt) and has_seq(rcvpkt, 0):
+			print("\tState 1 - not isCorrupt_rcv() && has_seq(0)")
 			print("\trcv_bytes:[{}]".format(rcv_bytes))
 			rcv_bytes += extract(rcvpkt)
 			print("\trcv_bytes:[{}]".format(rcv_bytes))
-			data = rcvpkt[4:-6]
-			print("\tdata:[{}]".format(data), end=" ")
-			chk_rcv = checksum(data)
-			print("\t     chk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
 			sleep(0.1)
 			state = FSM["State 2"]
-		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 1):
-			if isCorrupt(rcvpkt):
-				print("[-] Corrupted message: [{}]".format(rcvpkt))
+		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 1):
+			print("\tState 1 - isCorrupt_rcv() || has_seq(1)")
+			if isCorrupt_rcv(rcvpkt):
+				print("\t[-] Corrupted message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
-			else:
+			if has_seq(rcvpkt, 1):
 				print("[-] expected seq: {}   received seq: {}".format(0, rcvpkt[0]))
-			print("\tState 1 - isCorrupt() || has_seq(1)")
-			chk_rcv = checksum(data)
-			print("\tchk_rcv:[{}]".format(chk_rcv))
+			# chk_rcv = checksum(data)
+			# print("\tchk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
+			num_pkt_snt += 1
 			sleep(0.1)
 	if state == FSM["State 2"]:
-		print("\nState 2")
+		print("\n[State 2]")
 		print("receiving...")
 		try:
 			rcvpkt_len, rcvpkt = rdt_rcv(s)
@@ -198,31 +205,36 @@ while True:
 			print("[-] Connection was closed.")
 			break
 		print("State 2 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		if not isCorrupt(rcvpkt) and has_seq(rcvpkt, 1):
-			print("\tState 2 - not isCorrupt() && has_seq(1)")
+		pay_load = rcvpkt[4:-6]
+		print("\tpay_load:[{}]".format(pay_load), end=" ")
+		chk_rcv = checksum(pay_load)
+		print("\t     chk_rcv:[{}]".format(chk_rcv))
+		if not isCorrupt_rcv(rcvpkt) and has_seq(rcvpkt, 1):
+			print("\tState 2 - not isCorrupt_rcv() && has_seq(1)")
 			# rcv_bytes += extract(rcvpkt)
 			# rcv_bytes += extract(rcvpkt)
 			print("\trcv_bytes:[{}]".format(rcv_bytes))
-			data = rcvpkt[4:-6]
-			print("\tdata:[{}]".format(data), end=" ")
-			chk_rcv = checksum(data)
-			print("\t     chk_rcv:[{}]".format(chk_rcv))
+			# data = rcvpkt[4:-6]
+			# print("\tdata:[{}]".format(data), end=" ")
+			# chk_rcv = checksum(data)
+			# print("\t     chk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
 			sleep(0.1)
 			state = FSM["State 1"]
-		elif isCorrupt(rcvpkt) or has_seq(rcvpkt, 0):
-			if isCorrupt(rcvpkt):
+		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 0):
+			print("\tState 2 - isCorrupt_rcv() || has_seq(0)")
+			if isCorrupt_rcv(rcvpkt):
 				print("[-] Corrupted message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
-			else:
+			if has_seq(rcvpkt, 0):
 				print("[-] expected seq: {}   received seq: {}".format(1, rcvpkt[0]))
-			print("\tState 2 - isCorrupt() || has_seq(0)")
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
+			num_pkt_snt += 1
 			sleep(0.1)
 
 

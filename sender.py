@@ -64,7 +64,7 @@ print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 ###### Create a TCP socket ######
 s = socket(AF_INET, SOCK_STREAM)
 # Set the maximum wait time for the client
-maxWaitTime = 15
+maxWaitTime = 10
 s.settimeout(maxWaitTime)
 
 
@@ -103,6 +103,7 @@ while not msg_OK:
 		sleep(1)
 		if len(msg) != 0:
 			print("[+] Received a message: [{}]".format(msg))
+			print("[+] Received a message: [{}]".format(msg.split()))
 			if msg_split[0] == "OK":
 				# When get OK message, then proceed to the next step
 				msg_OK = True
@@ -131,7 +132,9 @@ while not msg_OK:
 		print("connection was CLOSED.")
 		s.close()
 		exit()
-
+wait_before_send = 2.0
+print("[+] Received OK message. Wait for {} seconds before sending...".format(wait_before_send))
+sleep(wait_before_send)
 
 
 ###### Finite State Machine ######
@@ -144,7 +147,7 @@ state = FSM["State 1"]
 
 ###### Timer threads ######
 threads = []
-time_val = 7.0
+time_val = 3.0
 
 ###### File ######
 file = open("declaration.txt", "r").read()
@@ -158,6 +161,7 @@ num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 num_timeouts = 0
+
 
 sleep(0.5)
 while len(snt_bytes) < num_bytes_to_send:
@@ -182,25 +186,36 @@ while len(snt_bytes) < num_bytes_to_send:
 		sleep(0.1)
 	elif state == FSM["State 2"]:
 		print("\n[State 2]")
-		if len(threads) == 0:
-			num_timeouts += 1
-			print("State 2 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
-			print("\t  last thread: {}".format(threads[-1]))
-			timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
-			threads.append(timer)
-			print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
-			print("\t  last thread: {}".format(threads[-1]))
-			timer.start()
-			print("State 2 - Timer thread START. # of threads: [{}]".format(len(threads)))
-			print("\t  last thread: {}".format(threads[-1]))
-			print("State 2 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-			sleep(0.1)
-		print("receiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(s)
+		while True:
+			if len(threads) == 0 or not threads[-1].is_alive():
+				num_timeouts += 1
+				print("State 2 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
+				print("\t  last thread: {}".format(threads[-1]))
+				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+				threads.append(timer)
+				print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
+				print("\t  last thread: {}".format(threads[-1]))
+				timer.start()
+				print("State 2 - Timer thread START. # of threads: [{}]".format(len(threads)))
+				print("\t  last thread: {}".format(threads[-1]))
+				print("State 2 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
+				sleep(0.1)
+
+			sleep(0.5)
+			try:
+				print("State 2 - receiving...")
+				rcvpkt_len, rcvpkt = rdt_rcv(s)
+				print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+				if rcvpkt_len != 0:
+					break
+			except Exception:
+				print("State 2 - exception!")
+				# sleep(time_val)
+
 		num_pkt_rcv += 1
-		print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 0):
-			print("\tState 2 - not isCorrupt() && isACK(0)")
+		# print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		if not isCorrupt_snd(rcvpkt) and isACK(rcvpkt, 0):
+			print("\tState 2 - not isCorrupt_snd() && isACK(0)")
 			print("\tState 2 - Stopping Timer thread.... # of threads: [{}]".format(len(threads)))
 			print("\tState 2 - last thread:{}".format(threads[-1]))
 			cancel_timers(threads)
@@ -209,10 +224,12 @@ while len(snt_bytes) < num_bytes_to_send:
 			print("\tState 2 - last thread:{}".format(threads[-1]))
 			state = FSM["State 3"]
 			sleep(0.1)
-		elif isCorrupt(rcvpkt) or isACK(rcvpkt, 1):
-			if isCorrupt(rcvpkt):
+		elif isCorrupt_snd(rcvpkt) or isACK(rcvpkt, 1):
+			if isCorrupt_snd(rcvpkt):
+				print("\tState 2 - Corrupted!")
+				print("\t[-] Corrupted message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
-			print("\tState 2 - isCorrupt() || isACK(1)")
+			print("\tState 2 - isCorrupt_snd() || isACK(1)")
 			sleep(0.1)
 			continue
 	elif state == FSM["State 3"]:
@@ -248,12 +265,23 @@ while len(snt_bytes) < num_bytes_to_send:
 			print("\t  last thread: {}".format(threads[-1]))
 			print("State 4 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
 			sleep(0.1)
-		print("receiving...")
-		rcvpkt_len, rcvpkt = rdt_rcv(s)
+
+
+		try:
+			print("State 4 - receiving...")
+			rcvpkt_len, rcvpkt = rdt_rcv(s)
+			print("\nState 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+			if rcvpkt_len != 0:
+				break
+		except Exception:
+			print("State 4 - exception!")
+
+		# print("receiving...")
+		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		num_pkt_rcv += 1
 		print("\nState 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		if not isCorrupt(rcvpkt) and isACK(rcvpkt, 1):
-			print("\tState 4 - not isCorrupt() && isACK(1)")
+		if not isCorrupt_snd(rcvpkt) and isACK(rcvpkt, 1):
+			print("\tState 4 - not isCorrupt_snd() && isACK(1)")
 			print("\tState 4 - Stopping Timer thread.... # of threads: [{}]".format(len(threads)))
 			print("\tState 4 - last thread:{}".format(threads[-1]))
 			cancel_timers(threads)
@@ -267,10 +295,12 @@ while len(snt_bytes) < num_bytes_to_send:
 			print("Total sent_bytes: {} bytes\n\n".format(len(snt_bytes)))
 			file = file[20:]
 			sleep(0.1)
-		elif isCorrupt(rcvpkt) or isACK(rcvpkt, 0):
-			if isCorrupt(rcvpkt):
+		elif isCorrupt_snd(rcvpkt) or isACK(rcvpkt, 0):
+			if isCorrupt_snd(rcvpkt):
+				print("\tState 4 - Corrupted!")
+				print("\t[-] Corrupted message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
-			print("\tState 4 - isCorrupt() || isACK(0)")
+			print("\tState 4 - isCorrupt_snd() || isACK(0)")
 			sleep(0.1)
 			continue
 
