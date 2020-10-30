@@ -289,6 +289,8 @@ while len(snt_bytes) < num_bytes_to_send:
 					break
 			except Exception:
 				print("State 4 - exception!")
+				s.close()
+				exit()
 
 		# print("receiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
