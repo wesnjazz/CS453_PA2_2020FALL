@@ -227,11 +227,14 @@ while len(snt_bytes) < num_bytes_to_send:
 			state = FSM["State 3"]
 			sleep(0.1)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 1):
+			print("\tState 2 - isCorrupt_snd() || isACK(1)")
 			if isCorrupt_snd(rcvpkt, sent_chk):
 				print("\tState 2 - Corrupted!")
 				print("\t[-] Corrupted message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
-			print("\tState 2 - isCorrupt_snd() || isACK(1)")
+			if isACK(rcvpkt, 1):
+				print("\tState 2 - ACK is 1!")
+				print("\t[-] ACK: {}".format(rcvpkt[2]))
 			sleep(0.1)
 			continue
 	elif state == FSM["State 3"]:
@@ -308,6 +311,9 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("\tState 4 - Corrupted!")
 				print("\t[-] Corrupted message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
+			if isACK(rcvpkt, 1):
+				print("\tState 2 - ACK is 1!")
+				print("\t[-] ACK: {}".format(rcvpkt[2]))
 			sleep(0.1)
 			continue
 
