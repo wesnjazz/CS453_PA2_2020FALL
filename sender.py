@@ -189,30 +189,33 @@ while len(snt_bytes) < num_bytes_to_send:
 		while True:
 			if len(threads) == 0 or not threads[-1].is_alive():
 				num_timeouts += 1
+				print("State 2 - threads is empty or last thread is dead")
+				print("State 2 - len(threads):{}  threads[-1]:{}".format(len(threads), threads[-1]))
 				print("State 2 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
 				threads.append(timer)
 				print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
+				sleep(0.5)
 				timer.start()
 				print("State 2 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("State 2 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
 				sleep(0.1)
 
-			sleep(0.5)
+			sleep(0.1)
 			try:
 				print("State 2 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
 				print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 				if rcvpkt_len != 0:
+					num_pkt_rcv += 1
 					break
 			except Exception:
 				print("State 2 - exception!")
 				# sleep(time_val)
 
-		num_pkt_rcv += 1
 		# print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt_snd(rcvpkt) and isACK(rcvpkt, 0):
 			print("\tState 2 - not isCorrupt_snd() && isACK(0)")
@@ -252,29 +255,32 @@ while len(snt_bytes) < num_bytes_to_send:
 		sleep(0.1)
 	elif state == FSM["State 4"]:
 		print("\n[State 4]")
-		if len(threads) == 0:
-			num_timeouts += 1
-			print("State 4 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
-			print("State 4 - last thread:{}".format(threads[-1]))
-			timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
-			threads.append(timer)
-			print("State 4 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
-			print("\t  last thread: {}".format(threads[-1]))
-			timer.start()
-			print("State 4 - Timer thread START. # of threads: [{}]".format(len(threads)))
-			print("\t  last thread: {}".format(threads[-1]))
-			print("State 4 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-			sleep(0.1)
+		while True:
+			if len(threads) == 0 or not threads[-1].is_alive():
+				print("State 4 - threads is empty or last thread is dead")
+				print("State 4 - len(threads):{}  threads[-1]:{}".format(len(threads), threads[-1]))
+				num_timeouts += 1
+				print("State 4 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
+				print("State 4 - last thread:{}".format(threads[-1]))
+				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+				threads.append(timer)
+				print("State 4 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
+				print("\t  last thread: {}".format(threads[-1]))
+				timer.start()
+				print("State 4 - Timer thread START. # of threads: [{}]".format(len(threads)))
+				print("\t  last thread: {}".format(threads[-1]))
+				print("State 4 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
+				sleep(0.1)
 
 
-		try:
-			print("State 4 - receiving...")
-			rcvpkt_len, rcvpkt = rdt_rcv(s)
-			print("\nState 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
-			if rcvpkt_len != 0:
-				break
-		except Exception:
-			print("State 4 - exception!")
+			try:
+				print("State 4 - receiving...")
+				rcvpkt_len, rcvpkt = rdt_rcv(s)
+				print("\nState 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+				if rcvpkt_len != 0:
+					break
+			except Exception:
+				print("State 4 - exception!")
 
 		# print("receiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
