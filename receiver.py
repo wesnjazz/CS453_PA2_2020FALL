@@ -190,7 +190,7 @@ while True:
 				print("[-] expected seq: {}   received seq: {}".format(0, rcvpkt[0]))
 			# chk_rcv = checksum(data)
 			# print("\tchk_rcv:[{}]".format(chk_rcv))
-			send_pkt = make_pkt_rcv(0, 1, chk_rcv)
+			send_pkt = make_pkt_rcv(1, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
@@ -231,7 +231,7 @@ while True:
 				num_crpt_msg_rcv += 1
 			if has_seq(rcvpkt, 0):
 				print("[-] expected seq: {}   received seq: {}".format(1, rcvpkt[0]))
-			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
+			send_pkt = make_pkt_rcv(1, 1, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
