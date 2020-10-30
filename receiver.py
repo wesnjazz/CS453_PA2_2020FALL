@@ -219,13 +219,13 @@ while True:
 			# continue
 			break
 		num_pkt_rcv += 1
-		print("State 1 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		print("State 1 - received: [{}], [{}] bytes".format(rcvpkt, rcvpkt_len))
 		prefix = rcvpkt[:-5]
-		print("\tprefix:[{}]".format(prefix), end=" ")
+		print("State 1 - prefix  : [{}]".format(prefix))
 		chk_rcv = checksum(prefix)
-		print("\t     chk_rcv:[{}]".format(chk_rcv))
+		print("State 1 - checksum: expected:[{}]  calculated:[{}]".format(rcvpkt[-5:], chk_rcv))
 		if not isCorrupt_rcv(rcvpkt) and has_seq(rcvpkt, 0):
-			print("\tState 1 - not isCorrupt_rcv() && has_seq(0)")
+			print("[+] State 1 - not isCorrupt_rcv() && has_seq(0)")
 			print("\trcv_bytes:[{}]".format(rcv_bytes))
 			rcv_bytes += extract(rcvpkt)
 			print("\trcv_bytes:[{}]".format(rcv_bytes))
@@ -236,12 +236,12 @@ while True:
 			# sleep(0.1)
 			state = FSM["State 2"]
 		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 1):
-			print("\tState 1 - isCorrupt_rcv() || has_seq(1)")
+			print("[-] State 1 - isCorrupt_rcv() || has_seq(1)")
 			if isCorrupt_rcv(rcvpkt):
-				print("\t[-] Corrupted message: [{}]".format(rcvpkt))
+				print("[-] Corrupted! message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
 			if has_seq(rcvpkt, 1):
-				print("[-] expected seq: {}   received seq: {}".format(0, rcvpkt[0]))
+				print("[-] Seq Error! expected: {}   received: {}".format(0, rcvpkt[0]))
 			# chk_rcv = checksum(data)
 			# print("\tchk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(1, 1, chk_rcv)
@@ -258,20 +258,20 @@ while True:
 		except ConnectionAbortedError:
 			print("[-] Connection was closed.")
 			break
-		print("State 2 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		print("State 2 - received: [{}], [{}] bytes".format(rcvpkt, rcvpkt_len))
 		prefix = rcvpkt[:-5]
-		print("\tprefix:[{}]".format(prefix), end=" ")
+		print("State 2 - prefix  : [{}]".format(prefix))
 		chk_rcv = checksum(prefix)
-		print("\t     chk_rcv:[{}]".format(chk_rcv))
+		print("State 2 - checksum: expected:[{}]  calculated:[{}]".format(rcvpkt[-5:], chk_rcv))
 		if not isCorrupt_rcv(rcvpkt) and has_seq(rcvpkt, 1):
-			print("\tState 2 - not isCorrupt_rcv() && has_seq(1)")
+			print("[+] State 2 - not isCorrupt_rcv() && has_seq(1)")
 			# rcv_bytes += extract(rcvpkt)
 			# rcv_bytes += extract(rcvpkt)
 			print("\trcv_bytes:[{}]".format(rcv_bytes))
 			# data = rcvpkt[4:-6]
 			# print("\tdata:[{}]".format(data), end=" ")
 			# chk_rcv = checksum(data)
-			# print("\t     chk_rcv:[{}]".format(chk_rcv))
+			# print("State 2 - checksum: expected:[{}]  calculated:[{}]".format(rcvpkt[-5:], chk_rcv))
 			send_pkt = make_pkt_rcv(1, 1, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
@@ -279,12 +279,12 @@ while True:
 			# sleep(0.1)
 			state = FSM["State 1"]
 		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 0):
-			print("\tState 2 - isCorrupt_rcv() || has_seq(0)")
+			print("[-] State 2 - isCorrupt_rcv() || has_seq(0)")
 			if isCorrupt_rcv(rcvpkt):
-				print("[-] Corrupted message: [{}]".format(rcvpkt))
+				print("[-] Corrupted! message: [{}]".format(rcvpkt))
 				num_crpt_msg_rcv += 1
 			if has_seq(rcvpkt, 0):
-				print("[-] expected seq: {}   received seq: {}".format(1, rcvpkt[0]))
+				print("[-] Seq Error! expected: {}   received: {}".format(1, rcvpkt[0]))
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)

@@ -39,7 +39,7 @@ def checksum_verifier(msg):
     content = msg[:-5]
     calc_checksum = checksum(content)
     expected_checksum = msg[-5:]
-    print("calc:{}  expect:{}".format(calc_checksum, expected_checksum))
+    # print("calc:{}  expect:{}".format(calc_checksum, expected_checksum))
     # step 3: compare with expected checksum
     if calc_checksum == expected_checksum:
         return True
@@ -73,70 +73,70 @@ def isCorrupt_rcv(rcvpkt):
     digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     chk_ok = checksum_verifier(rcvpkt)
     if not chk_ok:
-        print("chk_not same")
+        # print("chk_not same")
         return True
     if str(rcvpkt[0]) not in ["0", "1"]:
-        print("[0] not in 0 or 1")
+        # print("[0] not in 0 or 1")
         return True
     if rcvpkt[1] != " ":
-        print("white [1]")
+        # print("white [1]")
         return True
     if str(rcvpkt[2]) not in ["0", "1"]:
-        print("[2] not in 0 or 1")
+        # print("[2] not in 0 or 1")
         return True
     if rcvpkt[3] != " ":
-        print("white [3]")
+        # print("white [3]")
         return True
     if rcvpkt[24] != " ":
-        print("white [24]")
+        # print("white [24]")
         return True
     if rcvpkt[25] not in digit:
-        print("non digit [25]")
+        # print("non digit [25]")
         return True
     if rcvpkt[26] not in digit:
-        print("non digit [26]")
+        # print("non digit [26]")
         return True
     if rcvpkt[27] not in digit:
-        print("non digit [27]")
+        # print("non digit [27]")
         return True
     if rcvpkt[28] not in digit:
-        print("non digit [28]")
+        # print("non digit [28]")
         return True
     if rcvpkt[29] not in digit:
-        print("non digit [29]")
+        # print("non digit [29]")
         return True
     return False
 
 def isCorrupt_snd(rcvpkt, sent_chk):
     digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     if rcvpkt[-5:] != sent_chk:
-        print("sent_chk not same")
+        # print("sent_chk not same")
         return True
-    else:
-        print("sent_chk same")
+    # else:
+        # print("sent_chk same")
     if rcvpkt[:2] != "  ":
-        print("white [0:2]")
+        # print("white [0:2]")
         return True
     if str(rcvpkt[2]) not in ["0", "1"]:
-        print("[2] not in 0 or 1")
+        # print("[2] not in 0 or 1")
         return True
     if rcvpkt[3:25] != "                      ":
-        print("white [3:25]")
+        # print("white [3:25]")
         return True
     if rcvpkt[25] not in digit:
-        print("non digit [25]")
+        # print("non digit [25]")
         return True
     if rcvpkt[26] not in digit:
-        print("non digit [26]")
+        # print("non digit [26]")
         return True
     if rcvpkt[27] not in digit:
-        print("non digit [27]")
+        # print("non digit [27]")
         return True
     if rcvpkt[28] not in digit:
-        print("non digit [28]")
+        # print("non digit [28]")
         return True
     if rcvpkt[29] not in digit:
-        print("non digit [29]")
+        # print("non digit [29]")
         return True
     return False
 
