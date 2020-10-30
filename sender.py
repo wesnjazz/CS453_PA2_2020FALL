@@ -41,8 +41,8 @@ max_delay_str = sys.argv[4]
 max_delay = int(max_delay_str)
 
 # transmission_timeout
-transmission_timeout_str = sys.argv[5]
-transmission_timeout = int(transmission_timeout_str)
+time_val_str = sys.argv[5]
+time_val = float(time_val_str)
 
 # sender or receiver
 sender_or_receiver = "S"
@@ -147,7 +147,6 @@ state = FSM["State 1"]
 
 ###### Timer threads ######
 threads = []
-time_val = 3.0
 
 ###### File ######
 file = open("declaration.txt", "r").read()
