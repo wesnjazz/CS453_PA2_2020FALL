@@ -170,7 +170,7 @@ while len(snt_bytes) < num_bytes_to_send:
 		print("State 1 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 		send_pkt = make_pkt_snd(0, file)
 		print("make_pkt_snd:[{}]".format(send_pkt))
-		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 		threads.append(timer)
 		print("State 1 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 		print("\t  last thread: {}".format(threads[-1]))
@@ -178,8 +178,8 @@ while len(snt_bytes) < num_bytes_to_send:
 		print("State 1 - Timer thread START. # of threads: [{}]".format(len(threads)))
 		print("\t  last thread: {}".format(threads[-1]))
 		print("State 1 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-		# udt_send(s, send_pkt)
-		# num_pkt_snt += 1
+		udt_send(s, send_pkt)
+		num_pkt_snt += 1
 		sent_chk = send_pkt[-5:]
 		state = FSM["State 2"]
 		# sleep(0.1)
@@ -192,12 +192,13 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("State 2 - len(threads):{}  threads[-1]:{}".format(len(threads), threads[-1]))
 				print("State 2 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
-				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 				threads.append(timer)
 				print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				# sleep(0.1)
 				timer.start()
+				num_pkt_snt += 1
 				print("State 2 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("State 2 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
@@ -246,7 +247,7 @@ while len(snt_bytes) < num_bytes_to_send:
 		print("State 3 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 		send_pkt = make_pkt_snd(1, file)
 		print("make_pkt_snd:[{}]".format(send_pkt))
-		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 		threads.append(timer)
 		print("State 3 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 		print("\t  last thread: {}".format(threads[-1]))
@@ -255,8 +256,8 @@ while len(snt_bytes) < num_bytes_to_send:
 		print("\t  last thread: {}".format(threads[-1]))
 		print("State 3 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
 		udt_send(s, send_pkt)
-		sent_chk = send_pkt[-5:]
 		num_pkt_snt += 1
+		sent_chk = send_pkt[-5:]
 		state = FSM["State 4"]
 		# sleep(0.1)
 	elif state == FSM["State 4"]:
@@ -268,11 +269,12 @@ while len(snt_bytes) < num_bytes_to_send:
 				num_timeouts += 1
 				print("State 4 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 				print("State 4 - last thread:{}".format(threads[-1]))
-				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt,))
+				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 				threads.append(timer)
 				print("State 4 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				timer.start()
+				num_pkt_snt += 1
 				print("State 4 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("State 4 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
