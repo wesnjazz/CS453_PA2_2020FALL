@@ -64,7 +64,7 @@ print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 ###### Create a TCP socket ######
 s = socket(AF_INET, SOCK_STREAM)
 # Set the maximum wait time for the client
-maxWaitTime = 10
+maxWaitTime = 60
 s.settimeout(maxWaitTime)
 
 
@@ -214,8 +214,8 @@ while len(snt_bytes) < num_bytes_to_send:
 					break
 			except Exception:
 				print("State 2 - exception!")
-				s.close()
-				exit()
+				# s.close()
+				# exit()
 				# sleep(time_val)
 
 		# print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
@@ -289,8 +289,8 @@ while len(snt_bytes) < num_bytes_to_send:
 					break
 			except Exception:
 				print("State 4 - exception!")
-				s.close()
-				exit()
+				# s.close()
+				# exit()
 
 		# print("receiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)

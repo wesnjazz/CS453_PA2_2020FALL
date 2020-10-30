@@ -63,7 +63,7 @@ print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 ###### Create a TCP socket ######
 s = socket(AF_INET, SOCK_STREAM)
 # Set the maximum wait time for the client
-maxWaitTime = 20
+maxWaitTime = 60
 s.settimeout(maxWaitTime)
 
 
