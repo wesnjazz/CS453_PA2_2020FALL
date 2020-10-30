@@ -213,6 +213,8 @@ while len(snt_bytes) < num_bytes_to_send:
 					break
 			except Exception:
 				print("State 2 - exception!")
+				s.close()
+				exit()
 				# sleep(time_val)
 
 		# print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
