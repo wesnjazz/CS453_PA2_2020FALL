@@ -39,17 +39,19 @@ def checksum_verifier(msg):
     content = msg[:-5]
     calc_checksum = checksum(content)
     expected_checksum = msg[-5:]
+    print("calc:{}  expect:{}".format(calc_checksum, expected_checksum))
     # step 3: compare with expected checksum
     if calc_checksum == expected_checksum:
         return True
     return False
 
 def make_pkt_snd(seq, data):
-	ACK = str(0)
-	payload = data[:20]
-	chk = checksum(payload)
-	pkt = " ".join([str(seq), ACK, payload, chk])
-	return pkt
+    ACK = str(0)
+    payload = data[:20]
+    prefix = " ".join([str(seq), ACK, payload]) + " "
+    chk = checksum(prefix)
+    pkt = "".join([prefix, chk])
+    return pkt
 
 def make_pkt_rcv(ACK, seq, chk_rcv):
     pkt = "  a                      chksm"
@@ -70,8 +72,8 @@ def isACK(rcvpkt, ACK):
 def isCorrupt_rcv(rcvpkt):
     digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     chk_ok = checksum_verifier(rcvpkt)
-    if chk_ok:
-        print("chk_ok")
+    if not chk_ok:
+        print("chk_not same")
         return True
     if str(rcvpkt[0]) not in ["0", "1"]:
         print("[0] not in 0 or 1")
@@ -105,12 +107,13 @@ def isCorrupt_rcv(rcvpkt):
         return True
     return False
 
-def isCorrupt_snd(rcvpkt):
+def isCorrupt_snd(rcvpkt, sent_chk):
     digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    chk_ok = checksum_verifier(rcvpkt)
-    if chk_ok:
-        print("chk_ok")
+    if rcvpkt[-5:] != sent_chk:
+        print("sent_chk not same")
         return True
+    else:
+        print("sent_chk same")
     if rcvpkt[:2] != "  ":
         print("white [0:2]")
         return True

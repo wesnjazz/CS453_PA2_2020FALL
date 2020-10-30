@@ -166,9 +166,9 @@ while True:
 			break
 		num_pkt_rcv += 1
 		print("State 1 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		pay_load = rcvpkt[4:-6]
-		print("\tpay_load:[{}]".format(pay_load), end=" ")
-		chk_rcv = checksum(pay_load)
+		prefix = rcvpkt[:-5]
+		print("\tprefix:[{}]".format(prefix), end=" ")
+		chk_rcv = checksum(prefix)
 		print("\t     chk_rcv:[{}]".format(chk_rcv))
 		if not isCorrupt_rcv(rcvpkt) and has_seq(rcvpkt, 0):
 			print("\tState 1 - not isCorrupt_rcv() && has_seq(0)")
@@ -205,9 +205,9 @@ while True:
 			print("[-] Connection was closed.")
 			break
 		print("State 2 - received : [{}] bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		pay_load = rcvpkt[4:-6]
-		print("\tpay_load:[{}]".format(pay_load), end=" ")
-		chk_rcv = checksum(pay_load)
+		prefix = rcvpkt[:-5]
+		print("\tprefix:[{}]".format(prefix), end=" ")
+		chk_rcv = checksum(prefix)
 		print("\t     chk_rcv:[{}]".format(chk_rcv))
 		if not isCorrupt_rcv(rcvpkt) and has_seq(rcvpkt, 1):
 			print("\tState 2 - not isCorrupt_rcv() && has_seq(1)")
