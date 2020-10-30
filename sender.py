@@ -103,12 +103,12 @@ while not msg_OK:
 		sleep(1)
 		if len(msg) != 0:
 			print("[+] Received a message: [{}]".format(msg))
-			print("[+] Received a message: [{}]".format(msg.split()))
+			print("[+] Received a message: [{}]".format(msg_split))
 			if msg_split[0] == "OK":
 				# When get OK message, then proceed to the next step
 				msg_OK = True
 				break
-			if msg_split[0] == "ERROR":
+			if msg_split[0] == "ERROR" or msg_split[0] == "WAITINGOK":
 				# When get ERROR message, then exit the program after closing the socket
 				s.close()
 				exit()
