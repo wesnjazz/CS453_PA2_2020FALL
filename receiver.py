@@ -86,54 +86,108 @@ print("[+] Connected.")
 ###### Sending HELLO message to the server ######
 msg_OK = False
 waiting = False
+sleep_server = 0.2
 while not msg_OK:
-	sleep(0.1)
+	sleep(sleep_server)
 	try:
 		# Send the message if not received WAITING message from the server
 		if not waiting:
 			print("[-] Sending a message: [{}]".format(Message))
 			s.send(bytes(Message, encoding="utf-8"))
-			sleep(1)
+			sleep(sleep_server)
 
 		# Receive a message from the server
 		print("[-] Receiving...")
 		msg_len, msg = rdt_rcv(s)
 		msg_split = msg.split()
-		sleep(1)
+		sleep(sleep_server)
 		if len(msg) != 0:
 			print("[+] Received a message: [{}]".format(msg))
-			print("[+] Received a message: [{}]".format(msg.split()))
+			print("[+] Received a message: [{}]".format(msg_split))
 			if msg_split[0] == "OK":
 				# When get OK message, then proceed to the next step
 				msg_OK = True
 				break
-			elif msg_split[0] == "ERROR":
+			if msg_split[0] == "ERROR" or msg_split[0] == "WAITINGOK":
 				# When get ERROR message, then exit the program after closing the socket
 				s.close()
 				exit()
-			elif msg_split[0] == "WAITING":
+			if msg_split[0] == "WAITING":
 				# When get WAITING message, then wait for the next message
 				waiting = True
-			else:
-				s.close()
-				exit()
 		else:
 			# When received no data from the server
 			print("No data")
-			sleep(0.2)
+			# sleep(0.1)
 	except KeyboardInterrupt:
 		print("KeyboardInterrupt")
 		s.close()
 		exit()
 	except timeout:
 		# After Maximum time, the server is closing the opened socket and exit.
-		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+		print("TCP connection closing... Max time out reached: {} seconds".format(maxWaitTime))
 		s.close()
 		exit()
 	except ConnectionResetError:
 		print("connection was CLOSED.")
 		s.close()
 		exit()
+wait_before_send = 1.0
+print("[+] Received OK message. Wait for {} seconds before communicating...".format(wait_before_send))
+sleep(wait_before_send)
+
+# ###### Sending HELLO message to the server ######
+# msg_OK = False
+# waiting = False
+# sleep_server = 0.2
+# while not msg_OK:
+# 	sleep(sleep_server)
+# 	try:
+# 		# Send the message if not received WAITING message from the server
+# 		if not waiting:
+# 			print("[-] Sending a message: [{}]".format(Message))
+# 			s.send(bytes(Message, encoding="utf-8"))
+# 			sleep(sleep_server)
+
+# 		# Receive a message from the server
+# 		print("[-] Receiving...")
+# 		msg_len, msg = rdt_rcv(s)
+# 		msg_split = msg.split()
+# 		sleep(sleep_server)
+# 		if len(msg) != 0:
+# 			print("[+] Received a message: [{}]".format(msg))
+# 			print("[+] Received a message: [{}]".format(msg.split()))
+# 			if msg_split[0] == "OK":
+# 				# When get OK message, then proceed to the next step
+# 				msg_OK = True
+# 				break
+# 			elif msg_split[0] == "ERROR":
+# 				# When get ERROR message, then exit the program after closing the socket
+# 				s.close()
+# 				exit()
+# 			elif msg_split[0] == "WAITING":
+# 				# When get WAITING message, then wait for the next message
+# 				waiting = True
+# 			else:
+# 				s.close()
+# 				exit()
+# 		else:
+# 			# When received no data from the server
+# 			print("No data")
+# 			sleep(sleep_server)
+# 	except KeyboardInterrupt:
+# 		print("KeyboardInterrupt")
+# 		s.close()
+# 		exit()
+# 	except timeout:
+# 		# After Maximum time, the server is closing the opened socket and exit.
+# 		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+# 		s.close()
+# 		exit()
+# 	except ConnectionResetError:
+# 		print("connection was CLOSED.")
+# 		s.close()
+# 		exit()
 
 
 
@@ -149,7 +203,7 @@ num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 
-sleep(0.5)
+sleep(1)
 while True:
 	if state == FSM["State 1"]:
 		print("\n[State 1]")
@@ -179,7 +233,7 @@ while True:
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
-			sleep(0.1)
+			# sleep(0.1)
 			state = FSM["State 2"]
 		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 1):
 			print("\tState 1 - isCorrupt_rcv() || has_seq(1)")
@@ -194,7 +248,7 @@ while True:
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
-			sleep(0.1)
+			# sleep(0.1)
 	if state == FSM["State 2"]:
 		print("\n[State 2]")
 		print("receiving...")
@@ -222,7 +276,7 @@ while True:
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
-			sleep(0.1)
+			# sleep(0.1)
 			state = FSM["State 1"]
 		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 0):
 			print("\tState 2 - isCorrupt_rcv() || has_seq(0)")
@@ -235,7 +289,7 @@ while True:
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
 			num_pkt_snt += 1
-			sleep(0.1)
+			# sleep(0.1)
 
 
 print("\n\nName: {} \tDate/Time: {}".format(name, get_date_time_str()))

@@ -87,20 +87,21 @@ print("[+] Connected.")
 ###### Sending HELLO message to the server ######
 msg_OK = False
 waiting = False
+sleep_server = 0.2
 while not msg_OK:
-	sleep(0.1)
+	sleep(sleep_server)
 	try:
 		# Send the message if not received WAITING message from the server
 		if not waiting:
 			print("[-] Sending a message: [{}]".format(Message))
 			s.send(bytes(Message, encoding="utf-8"))
-			sleep(1)
+			sleep(sleep_server)
 
 		# Receive a message from the server
 		print("[-] Receiving...")
 		msg_len, msg = rdt_rcv(s)
 		msg_split = msg.split()
-		sleep(1)
+		sleep(sleep_server)
 		if len(msg) != 0:
 			print("[+] Received a message: [{}]".format(msg))
 			print("[+] Received a message: [{}]".format(msg_split))
@@ -118,22 +119,22 @@ while not msg_OK:
 		else:
 			# When received no data from the server
 			print("No data")
-			sleep(0.1)
+			# sleep(0.1)
 	except KeyboardInterrupt:
 		print("KeyboardInterrupt")
 		s.close()
 		exit()
 	except timeout:
 		# After Maximum time, the server is closing the opened socket and exit.
-		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
+		print("TCP connection closing... Max time out reached: {} seconds".format(maxWaitTime))
 		s.close()
 		exit()
 	except ConnectionResetError:
 		print("connection was CLOSED.")
 		s.close()
 		exit()
-wait_before_send = 2.0
-print("[+] Received OK message. Wait for {} seconds before sending...".format(wait_before_send))
+wait_before_send = 1.0
+print("[+] Received OK message. Wait for {} seconds before communicating...".format(wait_before_send))
 sleep(wait_before_send)
 
 
@@ -162,7 +163,6 @@ num_crpt_msg_rcv = 0
 num_timeouts = 0
 
 
-sleep(0.5)
 while len(snt_bytes) < num_bytes_to_send:
 	print("\nCurrent file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 	if state == FSM["State 1"]:
@@ -182,7 +182,7 @@ while len(snt_bytes) < num_bytes_to_send:
 		num_pkt_snt += 1
 		sent_chk = send_pkt[-5:]
 		state = FSM["State 2"]
-		sleep(0.1)
+		# sleep(0.1)
 	elif state == FSM["State 2"]:
 		print("\n[State 2]")
 		while True:
@@ -196,14 +196,14 @@ while len(snt_bytes) < num_bytes_to_send:
 				threads.append(timer)
 				print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
-				sleep(0.1)
+				# sleep(0.1)
 				timer.start()
 				print("State 2 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("State 2 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-				sleep(0.1)
+				# sleep(0.1)
 
-			sleep(0.1)
+			# sleep(0.1)
 			try:
 				print("State 2 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
@@ -225,7 +225,7 @@ while len(snt_bytes) < num_bytes_to_send:
 			print("\tState 2 - Timer thread STOPPED .... # of threads: [{}]".format(len(threads)))
 			print("\tState 2 - last thread:{}".format(threads[-1]))
 			state = FSM["State 3"]
-			sleep(0.1)
+			# sleep(0.1)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 1):
 			print("\tState 2 - isCorrupt_snd() || isACK(1)")
 			if isCorrupt_snd(rcvpkt, sent_chk):
@@ -235,7 +235,7 @@ while len(snt_bytes) < num_bytes_to_send:
 			if isACK(rcvpkt, 1):
 				print("\tState 2 - ACK is 1!")
 				print("\t[-] ACK: {}".format(rcvpkt[2]))
-			sleep(0.1)
+			# sleep(0.1)
 			continue
 	elif state == FSM["State 3"]:
 		print("\n[State 3]")
@@ -256,7 +256,7 @@ while len(snt_bytes) < num_bytes_to_send:
 		sent_chk = send_pkt[-5:]
 		num_pkt_snt += 1
 		state = FSM["State 4"]
-		sleep(0.1)
+		# sleep(0.1)
 	elif state == FSM["State 4"]:
 		print("\n[State 4]")
 		while True:
@@ -274,7 +274,7 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("State 4 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("State 4 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-				sleep(0.1)
+				# sleep(0.1)
 
 
 			try:
@@ -304,7 +304,7 @@ while len(snt_bytes) < num_bytes_to_send:
 			snt_bytes += extract(send_pkt)
 			print("Total sent_bytes: {} bytes\n\n".format(len(snt_bytes)))
 			file = file[20:]
-			sleep(0.1)
+			# sleep(0.1)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 1):
 			print("\tState 4 - isCorrupt_snd() || isACK(1)")
 			if isCorrupt_snd(rcvpkt, sent_chk):
@@ -314,7 +314,7 @@ while len(snt_bytes) < num_bytes_to_send:
 			if isACK(rcvpkt, 1):
 				print("\tState 2 - ACK is 1!")
 				print("\t[-] ACK: {}".format(rcvpkt[2]))
-			sleep(0.1)
+			# sleep(0.1)
 			continue
 
 
