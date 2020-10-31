@@ -1,4 +1,6 @@
 import threading
+from datetime import datetime
+
 
 def checksum(msg):
     """
@@ -160,7 +162,12 @@ def check_thread_alive(thr):
     # print(thr.is_alive())
     return thr.is_alive()
 
-
 def cancel_timers(threads):
     for t in threads[::-1]:
         t.cancel()
+
+def get_date_time_str():
+    now = datetime.now()
+    dt = now.strftime("%m/%d/%Y %H:%M:%S")
+    return dt
+

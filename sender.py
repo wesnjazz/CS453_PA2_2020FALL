@@ -3,13 +3,17 @@ import sys
 import threading
 from utils import *
 from time import sleep
-from datetime import datetime
 
 
-def get_date_time_str():
-	now = datetime.now()
-	dt = now.strftime("%m/%d/%Y %H:%M:%S")
-	return dt
+# 2020.10.24.Sat ~ 2020.10.30.Fri
+# CS 453 Computer Networking
+# rdt 3.0 protocol uses ACK, seq, checksum and timers
+# Checksum is used for checking corrupted packet
+# ACK indicates if the corresponding sequence number of packet was delivered.
+# e.g., ACK is 0 when the Receiver got the seq of 0 right.
+# Sender should check the sent checksum and received checksum, and compare if those matches.
+# Timer deals with delays, premature timeouts.
+# Timer send the packet again if no response from the Receiver
 
 
 # Check the number of command line arguments
@@ -19,8 +23,6 @@ if len(sys.argv) < 5:
 
 # Server IP address (str)
 # Server Port number (int)
-# server_IP = "127.0.0.1"
-# server_Port = 80
 server_IP = "gaia.cs.umass.edu"
 server_Port = 20000
 
@@ -50,16 +52,13 @@ sender_or_receiver = "S"
 # Message: in the form of "HELLO S <loss_rate> <corrupt_rate> <max_delay> <ID>" with a white space between them
 Message = "HELLO" + " " + sender_or_receiver + " " + loss_rate_str + " " + currupt_rate_str + " " + max_delay_str + " " + ID_str
 print("Message: {}".format(Message))
-# print(Message.split())
-# Message = "HELLO S 0.0 0.0 0 1234"
-
 
 
 
 ###### Print out INFO ######
 name = "Ziwei Hu"
 print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
-sleep(5)
+# sleep(5)
 
 ###### Create a TCP socket ######
 s = socket(AF_INET, SOCK_STREAM)
@@ -104,7 +103,6 @@ while not msg_OK:
 		sleep(sleep_server)
 		if len(msg) != 0:
 			print("[+] Received a message: [{}]".format(msg))
-			print("[+] Received a message: [{}]".format(msg_split))
 			if msg_split[0] == "OK":
 				# When get OK message, then proceed to the next step
 				msg_OK = True
@@ -139,7 +137,9 @@ print("[+] Received OK message. Wait for {} seconds before communicating...".for
 name = "Ziwei Hu"
 print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 sleep(wait_before_send)
-sleep(5)
+# sleep(5)
+
+
 
 ###### Finite State Machine ######
 FSM = {"State 1": 1, # Wait for call 0 from above
@@ -167,13 +167,18 @@ num_timeouts = 0
 
 s.settimeout(3)
 
+# Loop until first 200 bytes sent
 while len(snt_bytes) < num_bytes_to_send:
 	print("\nCurrent file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 	if state == FSM["State 1"]:
 		print("\n[State 1]")
 		print("State 1 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
+
+		# Make a packet to send with the seq 0
 		send_pkt = make_pkt_snd(0, file)
 		print("make_pkt_snd:[{}]".format(send_pkt))
+
+		# Timer thread starts
 		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 		threads.append(timer)
 		print("State 1 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
@@ -182,80 +187,105 @@ while len(snt_bytes) < num_bytes_to_send:
 		print("State 1 - Timer thread START. # of threads: [{}]".format(len(threads)))
 		print("\t  last thread: {}".format(threads[-1]))
 		print("[/] State 1 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
+
+		# Send the packet
 		udt_send(s, send_pkt)
 		num_pkt_snt += 1
+
+		# Store this checksum for the State 2
 		sent_chk = send_pkt[-5:]
+
+		# Change the FSM state
 		state = FSM["State 2"]
-		# sleep(0.1)
+
 	elif state == FSM["State 2"]:
 		print("\n[State 2]")
 		while True:
+			# If there are no alive Timer threads (TIMEOUT event happens)
 			if len(threads) == 0 or not threads[-1].is_alive():
+				# Statistics
 				num_timeouts += 1
 				print("State 2 - threads is empty or last thread is dead")
 				print("State 2 - len(threads):{}  threads[-1]:{}".format(len(threads), threads[-1]))
 				print("State 2 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
+
+				# Create a new Timer
 				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 				threads.append(timer)
 				print("State 2 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
-				# sleep(0.1)
+
+				# Start the new Timer
 				timer.start()
+				# Statistics
 				num_pkt_snt += 1
 				print("State 2 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("[/] State 2 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-				# sleep(0.1)
 
-			# sleep(0.1)
+			# Keep receiving packets
 			try:
 				print("[/] State 2 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
 				print("\n[+] State 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+
+				# If received 0, then there will be no more packets to receive.
 				if rcvpkt_len == 0:
 					print("\n[-] Empty data received. No more data flows. Close the connection...")
 					s.close()
 					break
+
+				# If received any packet, then proceed to the next step (Stop receiving)
 				else:
 					break
 			except Exception:
 				print("[-] State 2 - exception! Try to receive again...\n")
 				continue
-				# s.close()
-				# exit()
-				# sleep(time_val)
 
-		# print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		# After receiving the packet, increase the number of statistics
 		num_pkt_rcv += 1
+
+		# If the packet is good
+		# (The packet is NOT corrupted and the ACK is of seq 0)
 		if not isCorrupt_snd(rcvpkt, sent_chk) and isACK(rcvpkt, 0):
 			print("[+] State 2 - not isCorrupt_snd() && isACK(0)")
 			print("State 2 - Stopping Timer thread.... # of threads: [{}]".format(len(threads)))
 			print("State 2 - last thread:{}".format(threads[-1]))
+
+			# Kill all Timer threads
 			cancel_timers(threads)
-			# threads = []
 			print("State 2 - Timer thread STOPPED .... # of threads: [{}]".format(len(threads)))
 			print("State 2 - last thread:{}".format(threads[-1]))
+			
+			# Change the FSM state
 			state = FSM["State 3"]
-			# sleep(0.1)
+
+		# If the packet is not good
+		# (The packet is corrupted or not the expected ACK)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 1):
 			print("[-] State 2 - isCorrupt_snd() || isACK(1)\n")
+			# Debugging messages
 			if isCorrupt_snd(rcvpkt, sent_chk):
 				print("[-] State 2 - Corrupted!")
 				print("[-] Corrupted message: [{}]".format(rcvpkt))
+				# Statistics
 				num_crpt_msg_rcv += 1
 			if isACK(rcvpkt, 1):
 				print("[-] State 2 - ACK is 1!")
 				print("[-] ACK: {}".format(rcvpkt[2]))
-			# sleep(0.1)
+			# Receive again because the packet was not good
 			continue
+
 	elif state == FSM["State 3"]:
 		print("\n[State 3]")
-		# print("\nreceiving...")
-		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		print("State 3 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
+
+		# Make a packet to send with the seq 1
 		send_pkt = make_pkt_snd(1, file)
 		print("make_pkt_snd:[{}]".format(send_pkt))
+
+		# Timer thread starts
 		timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 		threads.append(timer)
 		print("State 3 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
@@ -264,80 +294,104 @@ while len(snt_bytes) < num_bytes_to_send:
 		print("State 3 - Timer thread START. # of threads: [{}]".format(len(threads)))
 		print("\t  last thread: {}".format(threads[-1]))
 		print("[/] State 3 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
+
+		# Send the packet
 		udt_send(s, send_pkt)
 		num_pkt_snt += 1
+
+		# Store this checksum for the State 4
 		sent_chk = send_pkt[-5:]
+
+		# Change the FSM state
 		state = FSM["State 4"]
-		# sleep(0.1)
+
 	elif state == FSM["State 4"]:
 		print("\n[State 4]")
 		while True:
+			# If there are no alive Timer threads (TIMEOUT event happens)
 			if len(threads) == 0 or not threads[-1].is_alive():
+				# Statistics
+				num_timeouts += 1
 				print("State 4 - threads is empty or last thread is dead")
 				print("State 4 - len(threads):{}  threads[-1]:{}".format(len(threads), threads[-1]))
-				num_timeouts += 1
 				print("State 4 - Timer thread is STOPPED.... # of threads: [{}]".format(len(threads)))
 				print("State 4 - last thread:{}".format(threads[-1]))
+
+				# Create a new Timer
 				timer = threading.Timer(time_val, udt_send, args=(s, send_pkt))
 				threads.append(timer)
 				print("State 4 - Timer thread ADDED. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
+
+				# Start the new Timer
 				timer.start()
+				# Statistics
 				num_pkt_snt += 1
 				print("State 4 - Timer thread START. # of threads: [{}]".format(len(threads)))
 				print("\t  last thread: {}".format(threads[-1]))
 				print("[/] State 4 - \n\t\tsending.... [{}] {} bytes".format(send_pkt, len(send_pkt)))
-				# sleep(0.1)
-
-
+			
+			# Keep receiving packets
 			try:
 				print("[/] State 4 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
 				print("\n[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+				
+				# If received 0, then there will be no more packets to receive.
 				if rcvpkt_len == 0:
 					print("\n[-] Empty data received. No more data flows. Close the connection...")
 					s.close()
 					break
+				# If received any packet, then proceed to the next step (Stop receiving)
 				else:
 					break
 			except Exception:
 				print("[-] State 4 - exception! Try to receive again...\n")
 				continue
-				# s.close()
-				# exit()
-
-		# print("receiving...")
-		# rcvpkt_len, rcvpkt = rdt_rcv(s)
+		
+		# Statistics
 		num_pkt_rcv += 1
 		print("\n[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		# If the packet is not good
+		# (The packet is corrupted or not the expected ACK)
 		if not isCorrupt_snd(rcvpkt, sent_chk) and isACK(rcvpkt, 1):
 			print("\n[+] State 4 - not isCorrupt_snd() && isACK(1)")
 			print("State 4 - Stopping Timer thread.... # of threads: [{}]".format(len(threads)))
 			print("State 4 - last thread:{}".format(threads[-1]))
+
+			# Kill all Timer threads
 			cancel_timers(threads)
-			# threads = []
 			print("State 4 - Timer thread STOPPED .... # of threads: [{}]".format(len(threads)))
 			print("State 4 - last thread:{}".format(threads[-1]))
+
+			# Change the FSM state
 			state = FSM["State 1"]
 			print("Succefully transferred {} bytes".format(len(send_pkt)))
 			print("Succefully transferred [{}]".format(send_pkt))
+
+			# Bytes successfully delivered through rdt 3.0 protocol
 			snt_bytes += extract(send_pkt)
 			print("Total sent_bytes: {} bytes\n\n".format(len(snt_bytes)))
 			file = file[20:]
-			# sleep(0.1)
+
+		# If the packet is not good
+		# (The packet is corrupted or not the expected ACK)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 0):
 			print("[-] State 4 - isCorrupt_snd() || isACK(0)\n")
+			# Debugging messages
 			if isCorrupt_snd(rcvpkt, sent_chk):
 				print("[-] State 4 - Corrupted!")
 				print("[-] Corrupted message: [{}]".format(rcvpkt))
+				# Statistics
 				num_crpt_msg_rcv += 1
 			if isACK(rcvpkt, 0):
 				print("[-] State 2 - ACK is 0!")
 				print("[-] ACK: {}".format(rcvpkt[2]))
-			# sleep(0.1)
+			# Receive again because the packet was not good
 			continue
 
 
+###### Statistics ######
 print("\n\nName: {} \tDate/Time: {}".format(name, get_date_time_str()))
 chk_send_bytes = checksum(snt_bytes)
 print("Checksum of total sent bytes: [{}]".format(chk_send_bytes))
