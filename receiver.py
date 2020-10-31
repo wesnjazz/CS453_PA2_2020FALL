@@ -20,6 +20,7 @@ from time import sleep
 if len(sys.argv) < 4:
 	print("Usage: python sender.py <connection_id> <loss_rate> <corrupt_rate> <max_delay>")
 	exit()
+
 # Server IP address (str)
 # Server Port number (int)
 server_IP = "gaia.cs.umass.edu"

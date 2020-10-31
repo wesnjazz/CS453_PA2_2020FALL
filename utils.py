@@ -150,16 +150,8 @@ def extract(rcvpkt):
     return rcvpkt[4:24]
 
 def check_thread_alive(thr):
-    # print(thr)
-    # return True
-    # try:
-        # l = thr.is_alive()
-    # except TypeError:
-        # return False
-    # return l
     print(thr)
     thr.join(timeout=0.0)
-    # print(thr.is_alive())
     return thr.is_alive()
 
 def cancel_timers(threads):
