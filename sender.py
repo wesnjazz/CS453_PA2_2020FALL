@@ -135,6 +135,9 @@ while not msg_OK:
 		exit()
 wait_before_send = 1.0
 print("[+] Received OK message. Wait for {} seconds before communicating...".format(wait_before_send))
+###### Print out INFO ######
+name = "Ziwei Hu"
+print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 sleep(wait_before_send)
 
 
@@ -162,7 +165,7 @@ num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 num_timeouts = 0
 
-s.settimeout(0.2)
+s.settimeout(3)
 
 while len(snt_bytes) < num_bytes_to_send:
 	print("\nCurrent file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))

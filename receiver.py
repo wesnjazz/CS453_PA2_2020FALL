@@ -134,61 +134,10 @@ while not msg_OK:
 		exit()
 wait_before_send = 1.0
 print("[+] Received OK message. Wait for {} seconds before communicating...".format(wait_before_send))
+###### Print out INFO ######
+name = "Ziwei Hu"
+print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 sleep(wait_before_send)
-
-# ###### Sending HELLO message to the server ######
-# msg_OK = False
-# waiting = False
-# sleep_server = 0.2
-# while not msg_OK:
-# 	sleep(sleep_server)
-# 	try:
-# 		# Send the message if not received WAITING message from the server
-# 		if not waiting:
-# 			print("[-] Sending a message: [{}]".format(Message))
-# 			s.send(bytes(Message, encoding="utf-8"))
-# 			sleep(sleep_server)
-
-# 		# Receive a message from the server
-# 		print("[-] Receiving...")
-# 		msg_len, msg = rdt_rcv(s)
-# 		msg_split = msg.split()
-# 		sleep(sleep_server)
-# 		if len(msg) != 0:
-# 			print("[+] Received a message: [{}]".format(msg))
-# 			print("[+] Received a message: [{}]".format(msg.split()))
-# 			if msg_split[0] == "OK":
-# 				# When get OK message, then proceed to the next step
-# 				msg_OK = True
-# 				break
-# 			elif msg_split[0] == "ERROR":
-# 				# When get ERROR message, then exit the program after closing the socket
-# 				s.close()
-# 				exit()
-# 			elif msg_split[0] == "WAITING":
-# 				# When get WAITING message, then wait for the next message
-# 				waiting = True
-# 			else:
-# 				s.close()
-# 				exit()
-# 		else:
-# 			# When received no data from the server
-# 			print("No data")
-# 			sleep(sleep_server)
-# 	except KeyboardInterrupt:
-# 		print("KeyboardInterrupt")
-# 		s.close()
-# 		exit()
-# 	except timeout:
-# 		# After Maximum time, the server is closing the opened socket and exit.
-# 		print("TCP Server Closing... Max time out reached: {} seconds".format(maxWaitTime))
-# 		s.close()
-# 		exit()
-# 	except ConnectionResetError:
-# 		print("connection was CLOSED.")
-# 		s.close()
-# 		exit()
-
 
 
 ###### Finite State Machine ######
@@ -203,7 +152,7 @@ num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 
-s.settimeout(0.2)
+s.settimeout(3)
 sleep(1)
 while True:
 	if state == FSM["State 1"]:
