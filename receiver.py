@@ -58,7 +58,7 @@ print("Message: {}".format(Message))
 ###### Print out INFO ######
 name = "Ziwei Hu"
 print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
-
+sleep(5)
 
 ###### Create a TCP socket ######
 s = socket(AF_INET, SOCK_STREAM)
@@ -138,7 +138,7 @@ print("[+] Received OK message. Wait for {} seconds before communicating...".for
 name = "Ziwei Hu"
 print("\nName: {} \tDate/Time: {}\n".format(name, get_date_time_str()))
 sleep(wait_before_send)
-
+sleep(5)
 
 ###### Finite State Machine ######
 FSM = {"State 1": 1, # Wait for call 0 from below
