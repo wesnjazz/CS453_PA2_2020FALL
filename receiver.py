@@ -203,7 +203,7 @@ num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 
-s.settimeout(3)
+s.settimeout(0.2)
 sleep(1)
 while True:
 	if state == FSM["State 1"]:

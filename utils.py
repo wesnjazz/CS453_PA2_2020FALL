@@ -59,10 +59,6 @@ def make_pkt_rcv(ACK, seq, chk_rcv):
     pkt = pkt.replace("chksm", chk_rcv)
     return pkt
 
-def rdt_rcv(socket):
-    rcvpkt = socket.recv(30).decode("utf-8")
-    return len(rcvpkt), rcvpkt
-
 def udt_send(socket, send_pkt):
     socket.send(bytes(send_pkt, encoding='utf-8'))
     print("\t\tudt_send(): [{}]".format(send_pkt))
@@ -143,6 +139,10 @@ def isCorrupt_snd(rcvpkt, sent_chk):
         # print("non digit [29]")
         return True
     return False
+
+def rdt_rcv(socket):
+	rcvpkt = socket.recv(1024).decode("utf-8")
+	return len(rcvpkt), rcvpkt
 
 def extract(rcvpkt):
     return rcvpkt[4:24]
