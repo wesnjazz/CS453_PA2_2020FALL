@@ -210,8 +210,11 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("[/] State 2 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
 				print("\n[+] State 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
-				if rcvpkt_len != 0:
-					num_pkt_rcv += 1
+				if rcvpkt_len == 0:
+					print("\n[-] Empty data received. No more data flows. Close the connection...")
+					s.close()
+					break
+				else:
 					break
 			except Exception:
 				print("[-] State 2 - exception! Try to receive again...\n")
@@ -221,6 +224,7 @@ while len(snt_bytes) < num_bytes_to_send:
 				# sleep(time_val)
 
 		# print("\nState 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		num_pkt_rcv += 1
 		if not isCorrupt_snd(rcvpkt, sent_chk) and isACK(rcvpkt, 0):
 			print("[+] State 2 - not isCorrupt_snd() && isACK(0)")
 			print("State 2 - Stopping Timer thread.... # of threads: [{}]".format(len(threads)))
@@ -287,7 +291,11 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("[/] State 4 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
 				print("\n[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
-				if rcvpkt_len != 0:
+				if rcvpkt_len == 0:
+					print("\n[-] Empty data received. No more data flows. Close the connection...")
+					s.close()
+					break
+				else:
 					break
 			except Exception:
 				print("[-] State 4 - exception! Try to receive again...\n")

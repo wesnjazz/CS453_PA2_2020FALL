@@ -211,6 +211,10 @@ while True:
 		print("[/] State 1 - receiving...")
 		try:
 			rcvpkt_len, rcvpkt = rdt_rcv(s)
+			if rcvpkt_len == 0:
+				print("\n[-] Empty data received. No more data flows. Close the connection...")
+				s.close()
+				break
 		except ConnectionAbortedError:
 			print("[-] Connection was closed.\n")
 			break
@@ -256,13 +260,17 @@ while True:
 		print("[/] State 2 - receiving...")
 		try:
 			rcvpkt_len, rcvpkt = rdt_rcv(s)
-			num_pkt_rcv += 1
+			if rcvpkt_len == 0:
+				print("\n[-] Empty data received. No more data flows. Close the connection...")
+				s.close()
+				break
 		except ConnectionAbortedError:
 			print("[-] Connection was closed.\n")
 			break
 		except Exception:
 			print("[-] State 2 - exception! Try to receive again...\n")
 			continue
+		num_pkt_rcv += 1
 		print("[+] State 2 - received: [{}], [{}] bytes".format(rcvpkt, rcvpkt_len))
 		prefix = rcvpkt[:-5]
 		print("State 2 - prefix  : [{}]".format(prefix))
