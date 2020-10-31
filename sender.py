@@ -165,7 +165,7 @@ num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 num_timeouts = 0
 
-s.settimeout(3)
+s.settimeout(1)
 
 # Loop until first 200 bytes sent
 while len(snt_bytes) < num_bytes_to_send:

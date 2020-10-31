@@ -41,7 +41,7 @@ def checksum_verifier(msg):
     content = msg[:-5]
     calc_checksum = checksum(content)
     expected_checksum = msg[-5:]
-    # print("calc:{}  expect:{}".format(calc_checksum, expected_checksum))
+    print("calc:{}  expect:{}".format(calc_checksum, expected_checksum))
     # step 3: compare with expected checksum
     if calc_checksum == expected_checksum:
         return True
@@ -111,7 +111,8 @@ def isCorrupt_rcv(rcvpkt):
 
 def isCorrupt_snd(rcvpkt, sent_chk):
     digit = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    if rcvpkt[-5:] != sent_chk:
+    # if rcvpkt[-5:] != sent_chk:
+    if not checksum_verifier(rcvpkt):
         # print("sent_chk not same")
         return True
     # else:

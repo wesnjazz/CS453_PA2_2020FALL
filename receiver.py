@@ -158,7 +158,7 @@ num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 
-s.settimeout(3)
+s.settimeout(1)
 sleep(1)
 while True:
 	if state == FSM["State 1"]:
@@ -187,7 +187,8 @@ while True:
 		print("State 1 - prefix  : [{}]".format(prefix))
 
 		# Calculate the checksum of the received packet (first 25 bytes)
-		chk_rcv = checksum(prefix)
+		sending_prefix = "  0                      "
+		chk_rcv = checksum(sending_prefixd)
 		print("State 1 - checksum: expected:[{}]  calculated:[{}]".format(rcvpkt[-5:], chk_rcv))
 
 		# If the received packet is good
@@ -257,7 +258,8 @@ while True:
 		print("State 2 - prefix  : [{}]".format(prefix))
 
 		# Calculate the checksum of the received packet (first 25 bytes)
-		chk_rcv = checksum(prefix)
+		sending_prefix = "  1                      "
+		chk_rcv = checksum(sending_prefix)
 		print("State 2 - checksum: expected:[{}]  calculated:[{}]".format(rcvpkt[-5:], chk_rcv))
 
 		# If the received packet is good
