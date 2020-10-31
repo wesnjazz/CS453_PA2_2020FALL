@@ -229,9 +229,7 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("[+] State 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 				if rcvpkt_len == 0:
 					print("\n[-] Empty data received. No more data flows. Close the connection...")
-					s.close()
-					break
-				else:
+					# s.close()
 					break
 			except Exception:
 				print("[-] State 2 - exception! Try to receive again...")
@@ -318,9 +316,7 @@ while len(snt_bytes) < num_bytes_to_send:
 				print("[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 				if rcvpkt_len == 0:
 					print("\n[-] Empty data received. No more data flows. Close the connection...")
-					s.close()
-					break
-				else:
+					# s.close()
 					break
 			except Exception:
 				print("[-] State 4 - exception! Try to receive again...")
