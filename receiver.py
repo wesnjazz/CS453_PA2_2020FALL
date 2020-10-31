@@ -203,7 +203,7 @@ num_pkt_snt = 0
 num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 
-s.settimeout(0.2)
+s.settimeout(0.5)
 sleep(1)
 while True:
 	if state == FSM["State 1"]:
@@ -216,10 +216,10 @@ while True:
 				s.close()
 				break
 		except ConnectionAbortedError:
-			print("[-] Connection was closed.\n")
+			print("\n[-] Connection was closed.")
 			break
 		except Exception:
-			print("[-] State 1 - exception! Try to receive again...\n")
+			print("[-] State 1 - exception! Try to receive again...")
 			continue
 		# if rcvpkt_len == 0:
 		# 	print("\n[-] State 1 - No data received.\n")
@@ -242,12 +242,12 @@ while True:
 			# sleep(0.1)
 			state = FSM["State 2"]
 		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 1):
-			print("[-] State 1 - isCorrupt_rcv() || has_seq(1)\n")
+			print("[-] State 1 - isCorrupt_rcv() || has_seq(1)")
 			if isCorrupt_rcv(rcvpkt):
 				print("[-] Corrupted! message: [{}]\n".format(rcvpkt))
 				num_crpt_msg_rcv += 1
 			if has_seq(rcvpkt, 1):
-				print("[-] Seq Error! expected: {}   received: {}\n".format(0, rcvpkt[0]))
+				print("[-] Seq Error! expected: {}   received: {}".format(0, rcvpkt[0]))
 			# chk_rcv = checksum(data)
 			# print("\tchk_rcv:[{}]".format(chk_rcv))
 			send_pkt = make_pkt_rcv(1, 1, chk_rcv)
@@ -265,10 +265,10 @@ while True:
 				s.close()
 				break
 		except ConnectionAbortedError:
-			print("[-] Connection was closed.\n")
+			print("\n[-] Connection was closed.")
 			break
 		except Exception:
-			print("[-] State 2 - exception! Try to receive again...\n")
+			print("[-] State 2 - exception! Try to receive again...")
 			continue
 		num_pkt_rcv += 1
 		print("[+] State 2 - received: [{}], [{}] bytes".format(rcvpkt, rcvpkt_len))
@@ -292,12 +292,12 @@ while True:
 			# sleep(0.1)
 			state = FSM["State 1"]
 		elif isCorrupt_rcv(rcvpkt) or has_seq(rcvpkt, 0):
-			print("[-] State 2 - isCorrupt_rcv() || has_seq(0)\n")
+			print("[-] State 2 - isCorrupt_rcv() || has_seq(0)")
 			if isCorrupt_rcv(rcvpkt):
 				print("[-] Corrupted! message: [{}]\n".format(rcvpkt))
 				num_crpt_msg_rcv += 1
 			if has_seq(rcvpkt, 0):
-				print("[-] Seq Error! expected: {}   received: {}\n".format(1, rcvpkt[0]))
+				print("[-] Seq Error! expected: {}   received: {}".format(1, rcvpkt[0]))
 			send_pkt = make_pkt_rcv(0, 0, chk_rcv)
 			print("\t\tsending.... [{}]".format(send_pkt))
 			udt_send(s, send_pkt)
