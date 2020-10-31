@@ -162,26 +162,12 @@ num_pkt_rcv = 0
 num_crpt_msg_rcv = 0
 num_timeouts = 0
 
-s.settimeout(2)
+s.settimeout(3)
 
 while len(snt_bytes) < num_bytes_to_send:
 	print("\nCurrent file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 	if state == FSM["State 1"]:
 		print("\n[State 1]")
-		# while True:
-		# 	try:
-		# 		print("[/] State 1 - receiving...")
-		# 		rcvpkt_len, rcvpkt = rdt_rcv(s)
-		# 		# print("[+] State 1 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
-		# 		# if rcvpkt_len == 0:
-		# 			# print("\n[-] Empty data received. No more data flows. Close the connection...")
-		# 			# s.close()
-		# 			# break
-		# 		# else:
-		# 			# break
-		# 	except Exception:
-		# 		print("[-] State 1 - exception! Try to receive again...")
-		# 		continue
 		print("State 1 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 		send_pkt = make_pkt_snd(0, file)
 		print("make_pkt_snd:[{}]".format(send_pkt))
@@ -197,10 +183,7 @@ while len(snt_bytes) < num_bytes_to_send:
 		num_pkt_snt += 1
 		sent_chk = send_pkt[-5:]
 		state = FSM["State 2"]
-		# break
 		# sleep(0.1)
-
-
 	elif state == FSM["State 2"]:
 		print("\n[State 2]")
 		while True:
@@ -226,13 +209,15 @@ while len(snt_bytes) < num_bytes_to_send:
 			try:
 				print("[/] State 2 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
-				print("[+] State 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+				print("\n[+] State 2 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 				if rcvpkt_len == 0:
 					print("\n[-] Empty data received. No more data flows. Close the connection...")
-					# s.close()
+					s.close()
+					break
+				else:
 					break
 			except Exception:
-				print("[-] State 2 - exception! Try to receive again...")
+				print("[-] State 2 - exception! Try to receive again...\n")
 				continue
 				# s.close()
 				# exit()
@@ -251,7 +236,7 @@ while len(snt_bytes) < num_bytes_to_send:
 			state = FSM["State 3"]
 			# sleep(0.1)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 1):
-			print("[-] State 2 - isCorrupt_snd() || isACK(1)")
+			print("[-] State 2 - isCorrupt_snd() || isACK(1)\n")
 			if isCorrupt_snd(rcvpkt, sent_chk):
 				print("[-] State 2 - Corrupted!")
 				print("[-] Corrupted message: [{}]".format(rcvpkt))
@@ -263,15 +248,8 @@ while len(snt_bytes) < num_bytes_to_send:
 			continue
 	elif state == FSM["State 3"]:
 		print("\n[State 3]")
-		# while True:
-		# 	try:
-		# 		print("[/] State 3 - receiving...")
-		# 		rcvpkt_len, rcvpkt = rdt_rcv(s)
-		# 	except Exception:
-		# 		print("[-] State 3 - exception! Try to receive again...")
-		# 		continue
-			# print("\nreceiving...")
-			# rcvpkt_len, rcvpkt = rdt_rcv(s)
+		# print("\nreceiving...")
+		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		print("State 3 - Current file size: [{}] bytes. First-ten: [{}]".format(len(file), file[:10]))
 		send_pkt = make_pkt_snd(1, file)
 		print("make_pkt_snd:[{}]".format(send_pkt))
@@ -287,7 +265,6 @@ while len(snt_bytes) < num_bytes_to_send:
 		num_pkt_snt += 1
 		sent_chk = send_pkt[-5:]
 		state = FSM["State 4"]
-		# break
 		# sleep(0.1)
 	elif state == FSM["State 4"]:
 		print("\n[State 4]")
@@ -313,13 +290,15 @@ while len(snt_bytes) < num_bytes_to_send:
 			try:
 				print("[/] State 4 - receiving...")
 				rcvpkt_len, rcvpkt = rdt_rcv(s)
-				print("[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+				print("\n[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 				if rcvpkt_len == 0:
 					print("\n[-] Empty data received. No more data flows. Close the connection...")
-					# s.close()
+					s.close()
+					break
+				else:
 					break
 			except Exception:
-				print("[-] State 4 - exception! Try to receive again...")
+				print("[-] State 4 - exception! Try to receive again...\n")
 				continue
 				# s.close()
 				# exit()
@@ -327,9 +306,9 @@ while len(snt_bytes) < num_bytes_to_send:
 		# print("receiving...")
 		# rcvpkt_len, rcvpkt = rdt_rcv(s)
 		num_pkt_rcv += 1
-		print("[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
+		print("\n[+] State 4 - received : {} bytes, [{}]".format(rcvpkt_len, rcvpkt))
 		if not isCorrupt_snd(rcvpkt, sent_chk) and isACK(rcvpkt, 1):
-			print("[+] State 4 - not isCorrupt_snd() && isACK(1)")
+			print("\n[+] State 4 - not isCorrupt_snd() && isACK(1)")
 			print("State 4 - Stopping Timer thread.... # of threads: [{}]".format(len(threads)))
 			print("State 4 - last thread:{}".format(threads[-1]))
 			cancel_timers(threads)
@@ -344,7 +323,7 @@ while len(snt_bytes) < num_bytes_to_send:
 			file = file[20:]
 			# sleep(0.1)
 		elif isCorrupt_snd(rcvpkt, sent_chk) or isACK(rcvpkt, 0):
-			print("[-] State 4 - isCorrupt_snd() || isACK(0)")
+			print("[-] State 4 - isCorrupt_snd() || isACK(0)\n")
 			if isCorrupt_snd(rcvpkt, sent_chk):
 				print("[-] State 4 - Corrupted!")
 				print("[-] Corrupted message: [{}]".format(rcvpkt))
